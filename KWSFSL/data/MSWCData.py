@@ -12,6 +12,7 @@ import time
 import pandas as pd
 import soundfile as sf
 from datetime import datetime
+from collections import defaultdict
 
 import numpy as np
 import torch
@@ -80,7 +81,7 @@ class MSWCDataset:
             self.mfcc.cuda()
         
         #remove data from the GSC10 dataset
-        avoid_words = ['yes','no','up','down','left','right','on','off','stop','go']
+        avoid_words = {'yes','no','up','down','left','right','on','off','stop','go'}
         
         min_words = 0
         balance = False
@@ -120,7 +121,11 @@ class MSWCDataset:
     def generate_data_dictionary(self, n_classes=None, min_words=0, balance = True, avoid_words = None):
 
         # Prepare data sets
-        self.data_set = {'training': [], 'validation': [], 'testing': []}
+        self.data_set = {
+            'training': defaultdict(list),
+            'validation': defaultdict(list),
+            'testing': defaultdict(list)
+        }
         wanted_words = []        
 
         for split in ["training","validation", "testing"]:
@@ -133,6 +138,7 @@ class MSWCDataset:
             elif split == 'testing':
                 split_name = 'test'
             df = pd.read_csv(self.csv_dir+split_name+".csv")
+            print(f"Done reading {split_name}.csv!")
             parse_word = {}
             # compute the number of samples per class
             for word in df['WORD']:
@@ -161,6 +167,8 @@ class MSWCDataset:
                         min_samples = min(min_samples, n_occur)
                         max_samples = max(max_samples, n_occur)
                         tot_samples += n_occur
+
+                wanted_words = set(wanted_words)
                 self.wanted_words = wanted_words
                 self.n_classes = len(wanted_words)
 
@@ -184,6 +192,9 @@ class MSWCDataset:
             spk_list = df['SPEAKER']
             samples_per_words = {}
             for i,word in enumerate(word_list):
+                if (i+1) % 1000 == 0 or (i+1) == len(word_list):
+                    print(f"{i+1:>10}/{len(word_list):>10}\r", end='')
+
                 if word in wanted_words:
                     wav_path = file_list[i]
                     if USE_WAV: wav_path = wav_path.replace(".opus",".wav")
@@ -193,30 +204,16 @@ class MSWCDataset:
                         if word in samples_per_words.keys():
                             if samples_per_words[word] < min_samples:
                                 samples_per_words[word] += 1
-                                self.data_set[split].append({'label': word, 'file': wav_path})
+                                self.data_set[split][word].append({'label': word, 'file': wav_path})
                         else:
                             samples_per_words[word] = 1
-                            self.data_set[split].append({'label': word, 'file': wav_path})                            
+                            self.data_set[split][word].append({'label': word, 'file': wav_path})
                     else:
-                        self.data_set[split].append({'label': word, 'file': wav_path})
+                        self.data_set[split][word].append({'label': word, 'file': wav_path})
             
             del df
 
-
-    def dataset_filter_class(self, dslist, classes):
-    # FIXME: not the fastest way but works
-        filtered_ds = []
-        extra_ds = []
-        for k,item in enumerate(dslist):
-            label = item['label']
-            if label in classes:
-                filtered_ds.append(item)
-            else:
-                extra_ds.append(item)
-        return filtered_ds, extra_ds
-    
     def get_transform_dataset(self, file_dict, classes, filters=None):
-        # file dict include is [{ 'label': LABEL_str, 'file': file_path, 'speaker': spkr_id}, .. ]
         # classes is a list of classes
         transforms = compose([
                 partial(self.load_audio, 'file', 'label', 'data'),
@@ -227,11 +224,11 @@ class MSWCDataset:
                 partial(self.label_to_idx, 'label', 'label_idx')
 
         ])
-        file_dict, rest_of_data = self.dataset_filter_class(file_dict, classes)
+        file_dict = sum([file_dict[c] for c in classes], [])
         ls_ds = ListDataset(file_dict)
         ts_ds = TransformDataset(ls_ds, transforms)
         
-        return ts_ds, rest_of_data
+        return ts_ds
 
     def get_episodic_fixed_sampler(self, num_classes,  n_way, n_episodes, fixed_silence_unknown = False):
         return EpisodicFixedBatchSampler(num_classes, n_way, n_episodes, fixed_silence_unknown = fixed_silence_unknown)    
@@ -251,7 +248,7 @@ class MSWCDataset:
 #                if k % 100 == 0:
 #                    print('Train set == ', k)
 
-                ts_ds, dataset = self.get_transform_dataset(dataset, [keyword])
+                ts_ds = self.get_transform_dataset(dataset, [keyword])
 
                 if n_samples <= 0:
                     n_samples = len(ts_ds)
@@ -272,7 +269,7 @@ class MSWCDataset:
     
     def get_iid_dataloader(self, split, batch_size, unique_speaker=False):
              
-        ts_ds, _ = self.get_transform_dataset(self.data_set[split], self.wanted_words)
+        ts_ds = self.get_transform_dataset(self.data_set[split], self.wanted_words)
         if split =='training':
             batch_size = batch_size
         else: 
