@@ -8,8 +8,12 @@ default_encoding = 'DSCNNL'
 default_model_prep = 'mfcc'
 
 default_dataset = 'googlespeechcommand'
-default_datadir = '' # FIXME: add here your path
+default_datadir = None
 default_split = 'GSC12'
+
+# GPU args
+parser.add_argument('--cuda_idx', type=str, default='0', metavar='IDX',
+                    help="cuda index to use (default 0)")
 # model args
 parser.add_argument('--model.model_name', type=str, default=default_model_name, metavar='MODELNAME',
                     help="model name (default: {:s})".format(default_model_name))
@@ -83,6 +87,8 @@ parser.add_argument('--speech.task', type=str, default=default_split, metavar='S
                     help="split name (default: {:s})".format(default_split))
 parser.add_argument('--speech.default_datadir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the dataset")
+parser.add_argument('--speech.default_csvdir', type=str, default=default_datadir, metavar='DIR',
+                    help="path to csv split files")
 parser.add_argument('--speech.include_silence', action='store_true', help="one of the classes out of n should be silence (default: False)")
 parser.add_argument('--speech.include_unknown', action='store_true', help="one of the classes out of n should be unknown (default: False)")
 parser.add_argument('--speech.sample_rate', type=int, default=16000, help='desired sampling rate of the input')
@@ -94,6 +100,8 @@ parser.add_argument('--speech.num_silence', type=int, default=1000, help='Number
 parser.add_argument('--speech.foreground_volume', type=float, default=1)
 
 parser.add_argument('--speech.include_noise', action='store_true', help="one of the classes out of n should be unknown (default: False)")
+parser.add_argument('--speech.noise_dir', type=str, default=default_datadir, metavar='DIR',
+                    help="path to noise")
 parser.add_argument('--speech.noise_snr', type=int, default=5, help='time shift the audio in milliseconds')
 parser.add_argument('--speech.noise_frequency', type=float, default=0.95, help='Amount of samples that should be mixed with background noise (between 0 and 1)')
 

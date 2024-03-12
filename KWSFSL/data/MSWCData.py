@@ -55,6 +55,8 @@ class MSWCDataset:
 
         # main data dir
         self.data_dir = data_dir
+        self.csv_dir = args['default_csvdir']
+        self.noise_dir = args['noise_dir']
 
         # add noise
         self.use_background = args['include_noise']
@@ -63,6 +65,10 @@ class MSWCDataset:
         if self.use_background:
             print('Load background data')
             self.background_data = self.load_background_data()
+            if self.background_data:
+                print('Success load background data!')
+            else:
+                print('Failed load background data!')
         else:
             self.background_data = []
         self.mfcc = self.build_mfcc_extractor()
@@ -126,7 +132,7 @@ class MSWCDataset:
                 split_name = 'dev'
             elif split == 'testing':
                 split_name = 'test'
-            df = pd.read_csv(self.data_dir+"en_"+split_name+".csv")
+            df = pd.read_csv(self.csv_dir+split_name+".csv")
             parse_word = {}
             # compute the number of samples per class
             for word in df['WORD']:
@@ -328,7 +334,7 @@ class MSWCDataset:
         return d
 
     def load_background_data(self):
-        background_path = os.path.join(self.data_dir, '../noise/', '*.wav')
+        background_path = os.path.join(self.noise_dir, '*.wav')
         background_data = []
         if self.use_background:
             for wav_path in glob.glob(background_path):

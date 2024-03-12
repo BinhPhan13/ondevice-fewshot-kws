@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 # needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
+# os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
 
 import torch
 import torch.optim as optim
@@ -86,6 +86,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     opt = vars(parser.parse_args())
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['cuda_idx']
 
     # load the encoder
     if os.path.isfile(opt['model.model_path']):    
@@ -236,4 +237,4 @@ if __name__ == '__main__':
     print('Writing log to:', output_file)
 
     with open(output_file, 'w') as fp:
-        json.dump(output, fp)
+        json.dump(output, fp, indent=2)

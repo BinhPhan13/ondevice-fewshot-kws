@@ -22,7 +22,7 @@ import log as log_utils
 
 
 # needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
+# os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
 
 
 if __name__ == '__main__':
@@ -30,8 +30,10 @@ if __name__ == '__main__':
     # read and post-process options
     from parser_kws import *
     args = parser.parse_args()
-
     opt = vars(parser.parse_args())
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['cuda_idx']
+
     opt['model.x_dim'] = list(map(int, opt['model.x_dim'].split(',')))
     opt['log.fields'] = ['loss']
     speech_args = filter_opt(opt, 'speech')
@@ -99,7 +101,6 @@ if __name__ == '__main__':
     dataset = opt['speech.dataset']
     data_dir = opt['speech.default_datadir'] 
     train_task = opt['speech.task'] 
-    print('Train Dataset: ', train_task)
     
     #prepare datasets (supported:  'googlespeechcommand' , 'MSWC')
     if dataset == 'googlespeechcommand':
@@ -208,10 +209,10 @@ if __name__ == '__main__':
             
             ep_idx+=1
 
-            # save checkpoint every 10 episodes
+            # save checkpoint every 1/5 of total episodes
             # if cuda is used, the checkpoint reload cuda tensors
             stored_ckpt = False
-            if (ep_idx)%10 == 0:
+            if ep_idx % (n_episodes//5) == 0 or ep_idx == n_episodes:
                 # to avoid saving issues, try first to save into a tmp file. if success copy
                 # (this may be avoided. I did this for some issues with the nfs!!)
                 checkpoint_file_tmp = os.path.join(opt['log.exp_dir'], 'checkpoint_tmp.pt')
