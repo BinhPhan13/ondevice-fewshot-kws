@@ -39,7 +39,7 @@ class EpisodicFixedBatchSampler(object):
         for i in range(self.n_episodes):
             yield self.sampling[i]
 
-
+USE_WAV = False
 
 class MSWCDataset:
     def __init__(self, data_dir, MSWCtype, cuda, args):
@@ -185,7 +185,9 @@ class MSWCDataset:
             samples_per_words = {}
             for i,word in enumerate(word_list):
                 if word in wanted_words:
-                    wav_path = file_list[i].replace(".opus",".wav")
+                    wav_path = file_list[i]
+                    if USE_WAV: wav_path = wav_path.replace(".opus",".wav")
+
                     speaker_id = spk_list[i]
                     if balance:
                         if word in samples_per_words.keys():
@@ -399,7 +401,7 @@ class MSWCDataset:
     
     def load_audio(self, key_path, key_label, out_field, d):
         #format d struct: {'label': 'stop', 'file': '../../data/speech_commands/GSC/stop/879a2b38_nohash_3.wav', 'speaker': '879a2b38'}
-        filepath = self.data_dir + 'clips_wav/'+ d[key_path]
+        filepath = os.path.join(self.data_dir, d[key_path]) # d[key_path] -> LINK entry in split file
         sound, sr = torchaudio.load(filepath=filepath, normalize=True)
         if sr != self.sample_rate:
             sound = torchaudio.functional.resample(sound, sr, self.sample_rate)
