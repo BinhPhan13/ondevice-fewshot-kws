@@ -150,6 +150,7 @@ if __name__ == '__main__':
         best_loss = checkpoint['best_loss']
         wait = checkpoint['wait']
         start_episode = checkpoint['start_episode']
+        meters = checkpoint['meters']
     else:
         if not os.path.isdir(opt['log.exp_dir']):
             os.makedirs(opt['log.exp_dir'])
@@ -166,6 +167,7 @@ if __name__ == '__main__':
         best_loss = np.inf
         wait = 0    
         start_episode = 0
+        meters = { 'train': { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] } }
     
     
     ##################################################
@@ -184,14 +186,19 @@ if __name__ == '__main__':
     model.train()
 
     while epoch < max_epoch and not stop:
+        if start_episode == n_episodes:
+            start_episode = 0
+            epoch += 1
+            continue
+
         # get episode loaders 
         episodic_loader = ds_tr.get_episodic_dataloader('training', n_way_tr, 
             n_support+n_query, n_episodes-start_episode)
 
-        for split, split_meters in meters.items():
-            for field, meter in split_meters.items():
-                meter.reset()
-        epoch_size = len(episodic_loader)
+        if start_episode == 0:
+            for split, split_meters in meters.items():
+                for field, meter in split_meters.items():
+                    meter.reset()
 
         ep_idx = start_episode
         for samples in tqdm(episodic_loader,desc="Epoch {:d} train".format(epoch + 1)):
@@ -225,6 +232,7 @@ if __name__ == '__main__':
                         'start_episode': ep_idx, 
                         'best_loss': best_loss,
                         'wait': wait,
+                        'meters': meters
                         }, checkpoint_file_tmp)
 
                     # check if it is correctly stored
