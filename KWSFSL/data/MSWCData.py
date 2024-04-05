@@ -83,7 +83,7 @@ class MSWCDataset:
         #remove data from the GSC10 dataset
         avoid_words = {'yes','no','up','down','left','right','on','off','stop','go'}
         
-        min_words = 0
+        min_words = 2
         balance = False
         if MSWCtype == 'MSWC350':
             n_classes = 350
@@ -162,7 +162,7 @@ class MSWCDataset:
                 for item in sorted_parse_word[:n_classes]:
                     word = item[0]
                     n_occur = item[1]
-                    if n_occur > min_words:
+                    if n_occur >= min_words:
                         wanted_words.append(word)
                         min_samples = min(min_samples, n_occur)
                         max_samples = max(max_samples, n_occur)
@@ -176,15 +176,15 @@ class MSWCDataset:
                 for item in sorted_parse_word:
                     word = item[0]
                     n_occur = item[1]
-                    if word in wanted_words:
+                    if word in wanted_words and n_occur >= min_words:
                         min_samples = min(min_samples, n_occur)
                         max_samples = max(max_samples, n_occur)
                         tot_samples += n_occur
 
             n_classes = len(wanted_words)
 
-            print("[Split: {}] {} classes with a number of words between {} and {}. Total of {} samples [avg of {} per class]"\
-             .format(split,n_classes,min_samples,max_samples, tot_samples,tot_samples/n_classes ))
+            print("[Split: {}] {} classes with a number of words between {} and {}. Total of {} samples" \
+             .format(split, n_classes, min_samples, max_samples, tot_samples))
 
             # build the dict dataset split
             word_list = df['WORD']
@@ -195,7 +195,7 @@ class MSWCDataset:
                 if (i+1) % 1000 == 0 or (i+1) == len(word_list):
                     print(f"{i+1:>10}/{len(word_list):>10}\r", end='')
 
-                if word in wanted_words:
+                if word in wanted_words and parse_word[word] >= min_samples:
                     wav_path = file_list[i]
                     if USE_WAV: wav_path = wav_path.replace(".opus",".wav")
 
@@ -236,33 +236,28 @@ class MSWCDataset:
     def get_episodic_dataloader(self, set_index, n_way, n_samples, n_episodes, sampler='episodic', 
         include_silence=True, include_unknown=True, unique_speaker=False):
 
+        if set_index not in ['training', 'validation', 'testing']:
+            raise ValueError("Set index = {} in episodic dataset is not correct.".format(set_index))
+
+        dataset = self.data_set[set_index]
         if sampler == 'episodic':
-            sampler = self.get_episodic_fixed_sampler(len(self.wanted_words),  
-                        n_way, n_episodes)
+            sampler = self.get_episodic_fixed_sampler(len(dataset), n_way, n_episodes)
 
         dl_list=[]        
-        if set_index in ['training', 'validation', 'testing']:
-            dataset = self.data_set[set_index]
-            for k, keyword in enumerate(self.wanted_words):
-                # debug print 
-#                if k % 100 == 0:
-#                    print('Train set == ', k)
+        for k, keyword in enumerate(dataset):
+            ts_ds = self.get_transform_dataset(dataset, [keyword])
 
-                ts_ds = self.get_transform_dataset(dataset, [keyword])
+            if n_samples <= 0:
+                n_samples = len(ts_ds)
 
-                if n_samples <= 0:
-                    n_samples = len(ts_ds)
-                
-                dl = torch.utils.data.DataLoader(ts_ds, batch_size=n_samples,  
-                        shuffle=True, num_workers=0)
-                dl_list.append(dl)
+            dl = torch.utils.data.DataLoader(ts_ds, batch_size=n_samples,
+                    shuffle=True, num_workers=0)
+            dl_list.append(dl)
 
-            ds = SetDataset(dl_list)
-            data_loader_params = dict(batch_sampler = sampler, num_workers=8, 
-                    pin_memory=not self.cuda)  
-            dl = torch.utils.data.DataLoader(ds, **data_loader_params)
-        else:
-            raise ValueError("Set index = {} in episodic dataset is not correct.".format(set_index))
+        ds = SetDataset(dl_list)
+        data_loader_params = dict(batch_sampler = sampler, num_workers=8,
+                pin_memory=not self.cuda)
+        dl = torch.utils.data.DataLoader(ds, **data_loader_params)
 
         return dl
     

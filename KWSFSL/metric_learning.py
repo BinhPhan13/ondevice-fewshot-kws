@@ -249,10 +249,22 @@ if __name__ == '__main__':
         start_episode = 0
         scheduler.step()
 
+        # calculate loss on test set
+        meters['test'] = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] }
+        test_loader = ds_tr.get_episodic_dataloader('testing', 10, 10, 10)
+        for samples in tqdm(test_loader, desc="Epoch {:d} test".format(epoch + 1)):
+            samples_ep = samples['data']
+            if cuda:
+                samples_ep = samples_ep.cuda()
+            with torch.no_grad():
+                loss, output = model.loss(samples_ep)
+            for field, meter in meters['test'].items():
+                meter.add(output[field])
+
         # log at the end of the epoch
         meter_vals = log_utils.extract_meter_values(meters)
-        print("Epoch {:02d}: {:s}".format(epoch, log_utils.render_meter_values(meter_vals)))
-        meter_vals['epoch'] = epoch
+        print("Epoch {:d}: {:s}".format(epoch+1, log_utils.render_meter_values(meter_vals)))
+        meter_vals['epoch'] = epoch+1
         with open(trace_file, 'a') as f:
             json.dump(meter_vals, f)
             f.write('\n')
@@ -262,6 +274,5 @@ if __name__ == '__main__':
         if cuda:
             model.cuda()
         
+        del meters['test']
         epoch += 1
-
-
