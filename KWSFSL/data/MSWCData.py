@@ -213,6 +213,9 @@ class MSWCDataset:
             
             del df
 
+        for split, d in self.data_set.items():
+            self.data_set[split] = dict(d)
+
     def get_transform_dataset(self, file_dict, classes, filters=None):
         # classes is a list of classes
         transforms = compose([
