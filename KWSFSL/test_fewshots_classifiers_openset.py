@@ -137,10 +137,15 @@ if __name__ == '__main__':
                     opt['data.cuda'], speech_args)
             print("The task {} is used for negative samples".format(
                     neg_task))       
+    elif dataset == 'MSWC':
+        from data.MSWCtest import MSWCDataset
+        ds = MSWCDataset(data_dir, pos_task, opt['data.cuda'], speech_args)
+        ds_neg = None
+        if neg_task is not None:
+            ds_neg = MSWCDataset(data_dir, neg_task, opt['data.cuda'], speech_args)
     else:
         raise ValueError("Dataset not recognized")
         
-
 
     # Few-Shot Parameters to configure the classifier for testing
     # the test is done over n_episodes
@@ -153,9 +158,7 @@ if __name__ == '__main__':
     # setup dataloader of support samples
     # support samples are retrived from the training split of the dataset
     # if include_unknown is True, the _unknown_ class is one of the num_classes
-    sampler = ds.get_episodic_fixed_sampler(num_classes,  n_way, n_episodes, 
-        fixed_silence_unknown = fixed_silence_unknown, include_unknown = speech_args['include_unknown'])
-    train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes, sampler=sampler)
+    train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes)
     
 
     # Postprocess arguments
@@ -184,8 +187,7 @@ if __name__ == '__main__':
         # fit the classifier on the support samples
         classifier.fit_batch_offline(support_samples, class_list)
         #get the index of the unknown class of the classifier
-        unk_idx = classifier.word_to_index['_unknown_'] if '_unknown_' in classifier.word_to_index.keys() \
-                                                        else None
+        unk_idx = classifier.word_to_index.get('_unknown_', None)
 
         '''
             Few-shot test in open set
