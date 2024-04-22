@@ -89,6 +89,8 @@ parser.add_argument('--speech.default_datadir', type=str, default=default_datadi
                     help="path to the dataset")
 parser.add_argument('--speech.default_csvdir', type=str, default=default_datadir, metavar='DIR',
                     help="path to csv split files")
+parser.add_argument('--speech.use_wav', action='store_true', help="use wav in MSWC")
+
 parser.add_argument('--speech.include_silence', action='store_true', help="one of the classes out of n should be silence (default: False)")
 parser.add_argument('--speech.include_unknown', action='store_true', help="one of the classes out of n should be unknown (default: False)")
 parser.add_argument('--speech.sample_rate', type=int, default=16000, help='desired sampling rate of the input')

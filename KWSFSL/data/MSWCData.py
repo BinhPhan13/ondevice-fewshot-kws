@@ -40,8 +40,6 @@ class EpisodicFixedBatchSampler(object):
         for i in range(self.n_episodes):
             yield self.sampling[i]
 
-USE_WAV = False
-
 class MSWCDataset:
     def __init__(self, data_dir, MSWCtype, cuda, args):
         self.sample_rate = args['sample_rate']
@@ -76,6 +74,7 @@ class MSWCDataset:
         
         #try if can I include cuda here
         #cuda=True
+        self.use_wav = args['use_wav']
         self.cuda = cuda
         if cuda:
             self.mfcc.cuda()
@@ -197,7 +196,7 @@ class MSWCDataset:
 
                 if word in wanted_words and parse_word[word] >= min_samples:
                     wav_path = file_list[i]
-                    if USE_WAV: wav_path = wav_path.replace(".opus",".wav")
+                    if self.use_wav: wav_path = wav_path.replace(".opus",".wav")
 
                     speaker_id = spk_list[i]
                     if balance:

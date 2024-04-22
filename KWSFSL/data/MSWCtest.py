@@ -52,7 +52,6 @@ def partition(L, ratio):
 
     return partitions
 
-USE_WAV = False
 SEED = 42
 RATIO = [2, 1, 4]
 SILENCE_LABEL = '_silence_'
@@ -93,6 +92,7 @@ class MSWCDataset:
         else:
             self.background_data = []
         
+        self.use_wav = args['use_wav']
         self.cuda = cuda
         self.unknown = args['include_unknown']
         self.silence = self.task == 'neg'
@@ -153,7 +153,7 @@ class MSWCDataset:
 
             # build the dict dataset split
             for word, link in zip(df['WORD'], df['LINK']):
-                if USE_WAV: link = link.replace(".opus",".wav")
+                if self.use_wav: link = link.replace(".opus",".wav")
                 if word in self.word_to_index:
                     self.data_set[split][word].append({'label': word, 'file': link})
                 elif word in unknown_words:

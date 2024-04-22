@@ -223,7 +223,7 @@ if __name__ == '__main__':
         output["test"][field] = {}
         output["test"][field]["mean"] = mean
         output["test"][field]["std"] = std
-        print("Final Test: Avg {} is {} with std dev {}".format(field, mean, std))
+        print("Final Test: Avg {} is {:.5f} with std dev {:.5f}".format(field, mean, std))
 
     # write log
     if speech_args['include_unknown']:
