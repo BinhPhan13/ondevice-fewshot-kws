@@ -186,11 +186,6 @@ if __name__ == '__main__':
     model.train()
 
     while epoch < max_epoch and not stop:
-        if start_episode == n_episodes:
-            start_episode = 0
-            epoch += 1
-            continue
-
         # get episode loaders 
         episodic_loader = ds_tr.get_episodic_dataloader('training', n_way_tr, 
             n_support+n_query, n_episodes-start_episode)
@@ -246,8 +241,8 @@ if __name__ == '__main__':
                         stored_ckpt = True
 
         # end epoch
+        if start_episode < n_episodes: scheduler.step()
         start_episode = 0
-        scheduler.step()
 
         # calculate loss on test set
         meters['test'] = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] }
