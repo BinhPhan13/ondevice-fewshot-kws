@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
         # calculate loss on test set
         meters['test'] = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] }
-        test_loader = ds_tr.get_episodic_dataloader('testing', 10, 10, 10)
+        test_loader = ds_tr.get_episodic_dataloader('testing', n_way_tr, 10, n_episodes)
         for samples in tqdm(test_loader, desc="Epoch {:d} test".format(epoch + 1)):
             samples_ep = samples['data']
             if cuda:
