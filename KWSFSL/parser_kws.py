@@ -127,3 +127,4 @@ parser.add_argument('--fsl.test.fixed_silence_unknown', action='store_true',
                     help='force unknown and silence class to be present in every episode (default: False)')
 parser.add_argument('--fsl.test.batch_size', type=int, default=128, 
                     help='test few shot batch size  (default: 128)')
+parser.add_argument('--fsl.test.note', type=str, default='GSC')

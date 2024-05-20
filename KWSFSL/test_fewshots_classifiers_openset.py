@@ -234,9 +234,12 @@ if __name__ == '__main__':
         fsl_z_norm = "NOTN"
     
     
-    output_log_file = 'evalGSC_fsl_{}_{}_{}_{}_{}_{}'.format(opt['fsl.classifier'],fsl_z_norm,task,n_way,n_support,n_episodes)
+    output_log_file = 'eval{}_fsl_{}_{}shot'.format(
+        opt['fsl.test.note'], opt['fsl.classifier'], n_support
+    )
     output_file = os.path.join(os.path.dirname(opt['model.model_path']), output_log_file)
     print('Writing log to:', output_file)
 
     with open(output_file, 'w') as fp:
+        print(f'{n_episodes} EPISODES', file=fp)
         json.dump(output, fp, indent=2)
