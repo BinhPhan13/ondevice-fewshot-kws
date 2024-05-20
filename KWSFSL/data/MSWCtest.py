@@ -122,7 +122,7 @@ class MSWCDataset:
             if split == "training":
                 all_words = {}
                 for word in df['WORD']: all_words[word] = 1
-                all_words = list(all_words)
+                all_words = sorted(all_words)
                 
                 random.seed(SEED)
                 random.shuffle(all_words)
