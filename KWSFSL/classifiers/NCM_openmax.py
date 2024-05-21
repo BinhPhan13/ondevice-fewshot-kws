@@ -39,7 +39,7 @@ class NCMOpenMax(nn.Module):
         if backbone is not None:
             self.backbone = backbone.eval()
             self.backbone.encoder.return_feat_maps = False
-            print(self.backbone)
+            #print(self.backbone)
             
             #model_parameters = self.backbone.encoder.parameters()
             #p1 = sum([np.prod(p.size()) for p in model_parameters])
@@ -182,7 +182,7 @@ class NCMOpenMax(nn.Module):
         zq = zq.view(self.num_classes, n_support, zq.size(-1))
         z_proto = zq.mean(1)
 
-        print(zq.size(), z_proto.size())
+        #print(zq.size(), z_proto.size())
 
         #########################################################
         # get more samples to compute the distributions
@@ -205,10 +205,10 @@ class NCMOpenMax(nn.Module):
                 continue
             self.word_to_index[category] = catId
         
-            print('***** Category:', category, i,' *****')
+            #print('***** Category:', category, i,' *****')
             weibull_model[catId] = {}
             meantrain_vec = z_proto[i].unsqueeze(0)
-            print(meantrain_vec.size(), zq[i].size())
+            #print(meantrain_vec.size(), zq[i].size())
             proto_vector.append(z_proto[i])
             
             if self.backbone.criterion.distance == 'euclidean': 
@@ -219,22 +219,22 @@ class NCMOpenMax(nn.Module):
                     zq[i].unsqueeze(1).expand( zq[i].size(0), *meantrain_vec.size()), 
                     meantrain_vec, dim=2)
             
-            print(distances.size())
+            #print(distances.size())
             distances = distances.squeeze().cpu().numpy()
             #meantrain_vec = meantrain_vec.squeeze().cpu().numpy()
 
             weibull_model[catId]['distances_%s'%self.backbone.criterion.distance] = distances
             weibull_model[catId]['mean_vec'] = meantrain_vec
 
-            print(distances)
+            #print(distances)
 
             mr = libmr.MR()
             tailtofit = sorted(distances)[-tailsize:]
-            print(tailtofit, mr.is_valid)
+            #print(tailtofit, mr.is_valid)
             
             mr.fit_high(tailtofit, len(tailtofit))
             weibull_model[catId]['weibull_model'] = mr
-            print('after update:', mr.is_valid)
+            #print('after update:', mr.is_valid)
 
             catId +=1
 
@@ -307,12 +307,12 @@ class NCMOpenMax(nn.Module):
                 #openmax_class_score += [modified_fc8_score]
                 #openmax_unknown_score += (category_score - modified_fc8_score)                
                 
-
                 modified_fc8_score = channel_distance * wscore
                 openmax_class_score += [modified_fc8_score]
                 openmax_unknown_score += (channel_distance - modified_fc8_score)    
                  
                 #print(wscore, channel_distance ,modified_fc8_score, openmax_unknown_score)
+
             openmax_class_score += [ openmax_unknown_score ]
             score_i = torch.Tensor(openmax_class_score).unsqueeze(0)
             #score_i = F.normalize(score_i, p=1.0, dim = 1)

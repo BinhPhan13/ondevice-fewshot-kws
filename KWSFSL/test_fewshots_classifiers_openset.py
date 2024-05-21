@@ -108,7 +108,7 @@ if __name__ == '__main__':
     else:
         raise ValueError("Classifier {} is not valid".format(opt['fsl.classifier']))
 
-    print(classifier)
+    #print(classifier)
 
     # import tasks: positive samples and optionative negative samples for open set
     # current limitations: tasks belongs to same dataset (separate eyword split)
@@ -183,7 +183,7 @@ if __name__ == '__main__':
         support_samples = support_sample['data']
         # extract label list          
         class_list = support_sample['label'][0]
-        print(class_list)
+        #print(class_list)
         # fit the classifier on the support samples
         classifier.fit_batch_offline(support_samples, class_list)
         #get the index of the unknown class of the classifier
