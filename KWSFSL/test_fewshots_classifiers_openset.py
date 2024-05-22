@@ -50,34 +50,25 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
 
         # perform classification
         p_y, target_ids = classifier.evaluate_batch(x, labels, return_probas=False)
+        conf_val, y_pred = p_y.max(1)
 
-        # compute the probabilities
-#            print('pred:',p_y, p_y.size() )
-        _, y_pred = p_y.max(1)
-        conf_val = p_y.gather(1, y_pred.unsqueeze(1)).squeeze().view(-1)
-
-#        print(p_y.size())
         if '_unknown_' in classifier.word_to_index.keys():
             y_pred_ood = p_y[:,unknow_id]
-
-            unknow_lab = torch.zeros(p_y.size(0)).add(unknow_id).long()
-            y_pred_close = p_y[(1 - torch.nn.functional.one_hot(unknow_lab, p_y.shape[1])).bool()].reshape(p_y.shape[0], -1) 
+            y_pred_close = np.delete(p_y, unknow_id, 1)
         else:
             y_pred_close = p_y
-            y_pred_ood = None
+            y_pred_ood = np.array([])
+
+        y_pred_tot +=  y_pred.tolist()
         y_pred_ood_tot += y_pred_ood.tolist()
         y_pred_close_tot += y_pred_close.tolist()
 
-#        print(p_y.size(), y_pred_close.size())
-
-        y_pred_tot +=  y_pred.tolist()
         target_ids = target_ids.squeeze().tolist()
-#        print(target_ids)
         y_true += [target_ids] if isinstance(target_ids, int) else target_ids
 
         conf_val = conf_val.tolist()
         y_score += [conf_val] if isinstance(conf_val, int) else conf_val
-    
+
     return y_score, y_pred_tot, y_true, y_pred_close_tot, y_pred_ood_tot
 
 

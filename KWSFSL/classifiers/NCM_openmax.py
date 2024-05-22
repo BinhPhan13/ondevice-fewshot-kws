@@ -316,18 +316,13 @@ class NCMOpenMax(nn.Module):
             openmax_class_score += [ openmax_unknown_score ]
             score_i = torch.Tensor(openmax_class_score).unsqueeze(0)
             #score_i = F.normalize(score_i, p=1.0, dim = 1)
-            score_i = F.softmax(-score_i, dim=1).cpu()
+            score_i = -score_i.cpu()
 
             #print('final score: ',score_i.squeeze())  
             score_batch.append(score_i)
 
-            #exit()
-
         scores = torch.cat(score_batch)
-        #print(scores)
-
-
+        if return_probas:
+            scores = torch.softmax(scores, dim=1).cpu()
 
         return scores, target_inds
-
-

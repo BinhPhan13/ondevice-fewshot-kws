@@ -140,6 +140,5 @@ class NearestClassMean(nn.Module):
 
         scores = self.predict(zq, return_probas=return_probas)
         #print(scores, target_inds)
-        p_y = F.softmax(scores, dim=1).cpu()
 
-        return p_y, target_inds
+        return scores, target_inds
