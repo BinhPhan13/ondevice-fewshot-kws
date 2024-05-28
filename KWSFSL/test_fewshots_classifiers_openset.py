@@ -24,10 +24,10 @@ from classifiers.NCM import NearestClassMean
 from classifiers.NCM_openmax import NCMOpenMax
 from classifiers.peeler import PeelerClass
 from classifiers.dproto import DProto
+from classifiers.openNCM_max import OpenNCMMax
+from classifiers.NCM_K import KnownNearestClassMean
 
-
-from metrics import compute_metrics 
-
+from metrics import compute_metrics
 
 def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     y_pred_tot = []
@@ -40,7 +40,6 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     score_wrong = 0
 
     for sample in tqdm(data_loader):
-
         x = sample['data']
         labels = sample['label'] # labela
 
@@ -52,11 +51,9 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
         p_y, target_ids = classifier.evaluate_batch(x, labels, return_probas=False)
 
         # compute the probabilities
-#            print('pred:',p_y, p_y.size() )
         _, y_pred = p_y.max(1)
         conf_val = p_y.gather(1, y_pred.unsqueeze(1)).squeeze().view(-1)
 
-#        print(p_y.size())
         if '_unknown_' in classifier.word_to_index.keys():
             y_pred_ood = p_y[:,unknow_id]
 
@@ -65,19 +62,16 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
         else:
             y_pred_close = p_y
             y_pred_ood = None
-        y_pred_ood_tot += y_pred_ood.tolist()
+        if y_pred_ood != None:
+            y_pred_ood_tot += y_pred_ood.tolist()
         y_pred_close_tot += y_pred_close.tolist()
-
-#        print(p_y.size(), y_pred_close.size())
 
         y_pred_tot +=  y_pred.tolist()
         target_ids = target_ids.squeeze().tolist()
-#        print(target_ids)
         y_true += [target_ids] if isinstance(target_ids, int) else target_ids
 
         conf_val = conf_val.tolist()
         y_score += [conf_val] if isinstance(conf_val, int) else conf_val
-    
     return y_score, y_pred_tot, y_true, y_pred_close_tot, y_pred_ood_tot
 
 
@@ -104,9 +98,14 @@ if __name__ == '__main__':
         classifier = PeelerClass(backbone=enc_model, cuda=opt['data.cuda'])
     elif opt['fsl.classifier'] == 'dproto':
         classifier = DProto(backbone=enc_model, cuda=opt['data.cuda'])
+    elif opt['fsl.classifier'] == 'ncm_max':
+        classifier = OpenNCMMax(backbone=enc_model, cuda=opt['data.cuda'])
+    elif opt['fsl.classifier'] == 'kncm':
+        classifier = KnownNearestClassMean(backbone=enc_model, cuda=opt['data.cuda'])
     else:
         raise ValueError("Classifier {} is not valid".format(opt['fsl.classifier']))
 
+    classifier.backbone.criterion.distance = opt['fsl.test.distance']
     print(classifier)
 
     # import tasks: positive samples and optionative negative samples for open set
@@ -129,7 +128,7 @@ if __name__ == '__main__':
         opt['model.num_classes'] = num_classes
         print("The task {} of the {} Dataset has {} classes".format(
                 pos_task, dataset, num_classes))
-        
+
         ds_neg = None
         if neg_task is not None:
             ds_neg = GSCSpeechDataset(data_dir, neg_task, 
@@ -138,7 +137,6 @@ if __name__ == '__main__':
                     neg_task))       
     else:
         raise ValueError("Dataset not recognized")
-        
 
 
     # Few-Shot Parameters to configure the classifier for testing
@@ -155,12 +153,11 @@ if __name__ == '__main__':
     sampler = ds.get_episodic_fixed_sampler(num_classes,  n_way, n_episodes, 
         fixed_silence_unknown = fixed_silence_unknown, include_unknown = speech_args['include_unknown'])
     train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes, sampler=sampler)
-    
 
     # Postprocess arguments
     #   list of log variables. may be turned into a configurable list usign opt['log.fields'] as 
     #   opt['log.fields'] = opt['log.fields'].split(',')
-    opt['log.fields'] = ['aucROC','accuracy_pos', 'accuracy_neg', 'acc_prec95','frr_prec95']
+    opt['log.fields'] = ['aucROC','accuracy_pos', 'accuracy_neg', 'acc_pos_prec95', 'acc_neg_prec95', 'frr_prec95']
 
     # import stats
     meters = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] } 
@@ -179,13 +176,12 @@ if __name__ == '__main__':
         support_samples = support_sample['data']
         # extract label list          
         class_list = support_sample['label'][0]
-        print(class_list)
         # fit the classifier on the support samples
         classifier.fit_batch_offline(support_samples, class_list)
-        #get the index of the unknown class of the classifier
+
+        #get the index of the unknown class of the classifier if there is the unknown class
         unk_idx = classifier.word_to_index['_unknown_'] if '_unknown_' in classifier.word_to_index.keys() \
                                                         else None
-
         '''
             Few-shot test in open set
             NB: _unknown_ is the negative class as part of the class_list
@@ -196,6 +192,7 @@ if __name__ == '__main__':
         # load only samples from the target classes and not negative _unknown_
         query_loader = ds.get_iid_dataloader('testing', opt['fsl.test.batch_size'], 
             class_list = [x for x in class_list if 'unknown' not in x])
+
         y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos = test_model(query_loader, classifier, unk_idx)
 
         # test on the negative dataset (_unknown_) if present    

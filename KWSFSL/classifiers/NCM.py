@@ -4,8 +4,8 @@ import os
 import torch
 from torch import nn
 import torch.nn.functional as F
-
 from models.utils import euclidean_dist
+from models.utils import mahalanobis_dist
 
 
 class NearestClassMean(nn.Module):
@@ -27,6 +27,7 @@ class NearestClassMean(nn.Module):
         self.input_shape = None
         self.num_classes = None
         self.class_list = None
+        self.cov_matrix = None
         self.word_to_index = {}
 
         # feature extraction backbone
@@ -62,14 +63,17 @@ class NearestClassMean(nn.Module):
         :param return_probas: True if the user would like probabilities instead of predictions returned
         :return: the test predictions or probabilities
         """
+
         if hasattr(self.backbone.criterion, 'distance'):
-            if self.backbone.criterion.distance == 'euclidean': 
+            if self.backbone.criterion.distance == 'euclidean':
                 scores = - euclidean_dist(X, self.muK)
-            elif self.backbone.criterion.distance == 'cosine': 
+            elif self.backbone.criterion.distance == 'cosine':
                 #print(X.size(), self.muK.size())
                 scores = F.cosine_similarity( 
                     X.unsqueeze(1).expand( X.size(0), *self.muK.size()), self.muK, dim=2)
                 #print(scores.size())
+            elif self.backbone.criterion.distance == 'mahalanobis':
+                scores = - mahalanobis_dist(X, self.muK)
 
             else:
                 raise ValueError('Type of distance metric {} not supported'.format(
@@ -103,17 +107,27 @@ class NearestClassMean(nn.Module):
 
         # class list and define class2idb
         self.class_list = class_list
+#         print(class_list)
         for i,item in enumerate(class_list):
             self.word_to_index[item] = i
 
         # inference
+#         print(x.shape) #x: shape (n, m, 1, ?)
         x = x.view(self.num_classes * n_support, *x.size()[2:])
-        zq = self.backbone.get_embeddings(x)
+#         print(x.shape) #x: shape (n x m, 1, ?)
+        zq = self.backbone.get_embeddings(x) # Return the x after do cnn :shape (n x m, 276)
+        # z_proto: Averaging the extracted features of every shots in each way
         z_proto = zq.view(self.num_classes, n_support, zq.size(-1)).mean(1)
 
+        self.cov_matrix = torch.cov(z_proto.T)
+#         print(f'Covariance matrix: {self.cov_matrix.size()}')
+#         print(torch.inverse(self.cov_matrix)); exit(0)
         # update class means
         self.muK = z_proto
+        # cK not change after epoch?
         self.cK = torch.ones(self.num_classes).mul(n_support)
+#         print("cK")
+#         print(self.cK)
         self.num_updates = 0
 
 
@@ -140,6 +154,5 @@ class NearestClassMean(nn.Module):
 
         scores = self.predict(zq, return_probas=return_probas)
         #print(scores, target_inds)
-        p_y = F.softmax(scores, dim=1).cpu()
 
-        return p_y, target_inds
+        return scores, target_inds

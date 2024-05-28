@@ -32,7 +32,7 @@ class DProto(nn.Module):
 
         # feature extraction backbone
         self.backbone = backbone
-        assert isinstance(backbone.criterion, deepset)or isinstance(backbone.criterion, dsfeatproto), 'Model not trained with DeepSet loss'
+#         assert isinstance(backbone.criterion, deepset)or isinstance(backbone.criterion, dsfeatproto), 'Model not trained with DeepSet loss'
 
         if backbone is not None:
             self.backbone = backbone.eval()
@@ -54,7 +54,7 @@ class DProto(nn.Module):
         scores_u = - euclidean_dist(X, self.proto_u) / self.backbone.criterion.temp_unk
         max_score_u =  scores_u.max(1)[0].unsqueeze(1)
         scores = torch.cat([scores, max_score_u],dim=1)
-        print(X, scores, scores_u, max_score_u.size())
+#         print(X, scores, scores_u, max_score_u.size())
 
         p_y = torch.softmax(scores, dim=1)
 
@@ -82,6 +82,7 @@ class DProto(nn.Module):
         # append the unknown class at the end
         self.class_list = class_list
         j = 0
+        unk_idx = None
         for item in class_list:
             if item == '_unknown_':
                 unk_idx = j
@@ -92,7 +93,7 @@ class DProto(nn.Module):
 
         # remove unknown from the support set
         x_idx = [j for j in range(x.size(0)) if j != unk_idx]
-        print(unk_idx, x_idx)
+#         print(unk_idx, x_idx)
         x = x[x_idx,:,:,:]
 
 
@@ -112,13 +113,13 @@ class DProto(nn.Module):
         self.proto = proto_samples
         self.proto_u = self.backbone.criterion.set_func(proto_samples) 
 
-        print('proto:', self.proto.size())
-        for i in range(self.proto.size(0)):
-            print(self.proto[i])
-        print('proto u:', self.proto_u.size())
-        for i in range(self.proto_u.size(0)):
-            print(self.proto_u[i])
-        #exit(0)
+#         print('proto:', self.proto.size())
+#         for i in range(self.proto.size(0)):
+#             print(self.proto[i])
+#         print('proto u:', self.proto_u.size())
+#         for i in range(self.proto_u.size(0)):
+#             print(self.proto_u[i])
+#         #exit(0)
 
 
 

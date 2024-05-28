@@ -27,7 +27,6 @@ def stas_datasets(n_pos, y_pred, y_true, y_score):
 def compute_metrics(    y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos, \
                         y_score_neg,  y_pred_neg, y_true_neg, y_pred_close_neg, y_pred_ood_neg, \
                         class_dict, target_far= 0.05, verbose=True):
-
     # identify the index of the _unnown_ (negative) class in the output vectors
     if '_unknown_' in  class_dict.keys():
         unk_idx = class_dict['_unknown_']
@@ -51,6 +50,9 @@ def compute_metrics(    y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y
         Compute Accuracy Negative Set 
     '''
     n_neg = len(y_score_neg)
+    y_score_neg = np.array(y_score_neg)
+    y_pred_neg = np.array(y_pred_neg)
+    y_true_neg = np.array(y_true_neg)
     accuracy_neg, mean_score_ok, mean_score_wrong, conf = \
         stas_datasets(n_neg, y_pred_neg, y_true_neg, y_score_neg)
     print('Accuracy Negative: ',accuracy_neg)
@@ -83,9 +85,10 @@ def compute_metrics(    y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y
         - Accuracy at xx% FAR
         - FRR at xx% FAR
     '''
+    print(f'{target_far = }')
     acc_xxfar = thr_xxfar = frr_xxfar = cerr_xxfar = 0.0
     # search thr at target_far FAR
-    print(fpr, tpr, thresholds)
+    #print(fpr, tpr, thresholds)
     th_idx = -1
     for i,item in enumerate(fpr):
         if item > target_far:
@@ -97,21 +100,37 @@ def compute_metrics(    y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y
     # compute accuracy and FRR at target FAR
     if th_idx != -1:
         thr_xxfar = thresholds[th_idx].astype(np.float64)
+        print(thr_xxfar)
+        print(y_score_pos, y_score_neg)
+
+        print("On GSC+:")
+        print('#unk before masking:', (y_pred_pos == unk_idx).sum())
         mask = y_score_pos < thr_xxfar
         y_pred_pos[mask] = unk_idx
-        frr_xxfar = (y_pred_pos == unk_idx).sum() / n_pos
-        print('after masking:', (y_pred_pos == unk_idx).sum(), frr_xxfar)
-        acc_xxfar, _, _, conf = \
+        frr_xxfar_pos = (y_pred_pos == unk_idx).sum() / n_pos
+        print('#unk after masking:', (y_pred_pos == unk_idx).sum())
+        acc_xxfar_pos, _, _, conf = \
             stas_datasets(n_pos, y_pred_pos, y_true_pos, y_score_pos)
         print(conf)
 
-    print('Accuracy Positive:' ,acc_xxfar)
+        print("On GSC-:")
+        print('#unk before masking:', (y_pred_neg == unk_idx).sum())
+        mask = y_score_neg < thr_xxfar
+        y_pred_neg[mask] = unk_idx
+        print('#unk after masking:', (y_pred_neg == unk_idx).sum())
+        acc_xxfar_neg, _, _, conf = \
+            stas_datasets(n_neg, y_pred_neg, y_true_neg, y_score_neg)
+        print(conf)
+
+    print('Accuracy Positive:' ,acc_xxfar_pos)
+    print('Accuracy Negative:' ,acc_xxfar_neg)
+    print('False Rejection Rate Positive: ', frr_xxfar_pos)
     print('THR Positive:' ,thr_xxfar)
 
 
     return {'aucROC':auroc, 'n_pos':n_pos, 'n_neg':n_neg, 
             'accuracy_pos': accuracy_pos, 
             'accuracy_neg': accuracy_neg,
-            'acc_prec95': acc_xxfar, 'thr_prec95': thr_xxfar, 
-            'frr_prec95': frr_xxfar,'cerr_prec95': cerr_xxfar }
+            'acc_pos_prec95': acc_xxfar_pos, 'thr_prec95': thr_xxfar,
+            'frr_prec95': frr_xxfar_pos, 'acc_neg_prec95': acc_xxfar_neg}
 
