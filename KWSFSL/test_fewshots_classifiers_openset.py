@@ -24,10 +24,10 @@ from classifiers.NCM import NearestClassMean
 from classifiers.NCM_openmax import NCMOpenMax
 from classifiers.peeler import PeelerClass
 from classifiers.dproto import DProto
+from classifiers.openNCM_max import OpenNCMMax
+from classifiers.NCM_K import KnownNearestClassMean
 
-
-from metrics import compute_metrics 
-
+from metrics import compute_metrics
 
 def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     y_pred_tot = []
@@ -40,7 +40,6 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     score_wrong = 0
 
     for sample in tqdm(data_loader):
-
         x = sample['data']
         labels = sample['label'] # labela
 
@@ -96,9 +95,14 @@ if __name__ == '__main__':
         classifier = PeelerClass(backbone=enc_model, cuda=opt['data.cuda'])
     elif opt['fsl.classifier'] == 'dproto':
         classifier = DProto(backbone=enc_model, cuda=opt['data.cuda'])
+    elif opt['fsl.classifier'] == 'ncm_max':
+        classifier = OpenNCMMax(backbone=enc_model, cuda=opt['data.cuda'])
+    elif opt['fsl.classifier'] == 'kncm':
+        classifier = KnownNearestClassMean(backbone=enc_model, cuda=opt['data.cuda'])
     else:
         raise ValueError("Classifier {} is not valid".format(opt['fsl.classifier']))
 
+    classifier.backbone.criterion.distance = opt['fsl.test.distance']
     #print(classifier)
 
     # import tasks: positive samples and optionative negative samples for open set
@@ -121,7 +125,7 @@ if __name__ == '__main__':
         opt['model.num_classes'] = num_classes
         print("The task {} of the {} Dataset has {} classes".format(
                 pos_task, dataset, num_classes))
-        
+
         ds_neg = None
         if neg_task is not None:
             ds_neg = GSCSpeechDataset(data_dir, neg_task, 
@@ -136,7 +140,6 @@ if __name__ == '__main__':
             ds_neg = MSWCDataset(data_dir, neg_task, opt['data.cuda'], speech_args)
     else:
         raise ValueError("Dataset not recognized")
-        
 
     # Few-Shot Parameters to configure the classifier for testing
     # the test is done over n_episodes
@@ -155,7 +158,7 @@ if __name__ == '__main__':
     # Postprocess arguments
     #   list of log variables. may be turned into a configurable list usign opt['log.fields'] as 
     #   opt['log.fields'] = opt['log.fields'].split(',')
-    opt['log.fields'] = ['aucROC','accuracy_pos', 'accuracy_neg', 'acc_prec95','frr_prec95']
+    opt['log.fields'] = ['aucROC','accuracy_pos', 'accuracy_neg', 'acc_pos_prec95', 'acc_neg_prec95', 'frr_prec95']
 
     # import stats
     meters = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] } 
@@ -190,6 +193,7 @@ if __name__ == '__main__':
         # load only samples from the target classes and not negative _unknown_
         query_loader = ds.get_iid_dataloader('testing', opt['fsl.test.batch_size'], 
             class_list = [x for x in class_list if 'unknown' not in x])
+
         y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos = test_model(query_loader, classifier, unk_idx)
 
         # test on the negative dataset (_unknown_) if present    

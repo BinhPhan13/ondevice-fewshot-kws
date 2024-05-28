@@ -23,6 +23,8 @@ from models.losses.peeler import peeler_loss
 from models.losses.dproto import dproto
 
 
+from models.encoder.ConvNeXt import convnext_atto, convnext_femto, convnext_pico, convnext_small, convnext_tiny, convnext_base, convnext_large, convnext_xlarge
+from models.encoder.ConvNeXtV2 import convnextv2_atto, convnextv2_femto, convnextv2_pico, convnextv2_tiny, convnextv2_base, convnextv2_large, convnextv2_nano
 
 class ReprModel(nn.Module):
     def __init__(self, encoder, preprocessing, 
@@ -124,6 +126,32 @@ def get_encoder(encoding, x_dim, hid_dim, out_dim):
         return TCResNet8(x_dim[0], x_dim[1], x_dim[2])
     elif encoding == 'TCResNet8Dilated':
         return TCResNet8Dilated(x_dim[0], x_dim[1], x_dim[2])
+    elif encoding == 'ConvNeXt_Atto':
+        return convnext_atto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Femto':
+        return convnext_femto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Pico':
+        return convnext_pico(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Tiny':
+        return convnext_tiny(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Small':
+        return convnext_small(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Base':
+        return convnext_base(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_Large':
+        return convnext_large(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXt_XLarge':
+        return convnext_xlarge(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Atto':
+        return convnextv2_atto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Femto':
+        return convnextv2_femto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Pico':
+        return convnextv2_pico(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Nano':
+        return convnextv2_nano(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Tiny':
+        return convnextv2_tiny(in_chans=x_dim[0], num_classes=x_dim[1])
     else:
         raise ValueError("Model {} is not valid".format(encoding))
 

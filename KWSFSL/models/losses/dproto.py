@@ -44,16 +44,17 @@ class dproto(nn.Module):
         self.n_support = args['n_support']
         self.n_query = args['n_query']
         self.n_way_u = args['n_way_u']
-        if args['distance'] is not None:
-            self.distance =  args['distance']
-        else:
-            self.distance =  'euclidean'
+#         if args['distance'] is not None:
+#             self.distance =  args['distance']
+#         else:
+#             self.distance =  'euclidean'
         
-        if self.distance ==  'cosine':
-            init_w=10.0
-            init_b=-5.0
-            self.w = nn.Parameter(torch.tensor(init_w))
-            self.b = nn.Parameter(torch.tensor(init_b))
+#         if self.distance ==  'cosine':
+#             init_w=10.0
+#             init_b=-5.0
+#             self.w = nn.Parameter(torch.tensor(init_w))
+#             self.b = nn.Parameter(torch.tensor(init_b))
+        self.distance =  'euclidean'
 
         self.margin = args['margin']
         self.in_feats = args['z_dim']
@@ -160,7 +161,7 @@ class dproto(nn.Module):
 
             cd = torch.mm(F.gumbel_softmax(score_u, dim=0), proto_u)
             score_u = F.cosine_similarity(cd, query_samples_ukn, dim=1).add_(-self.margin).unsqueeze(1)
-#            print('score_u', cd.size(), query_samples_knw.size(), score_u.size())
+#             print('score_u', cd.size(), query_samples_knw.size(), score_u.size()); exit(0)
 
 
             score = torch.cat([score_k, score_u], dim=1)
@@ -168,8 +169,9 @@ class dproto(nn.Module):
             # apply learned scaling
             torch.clamp(self.w, 1e-6)
             score = score * self.w + self.b
-
+#         print(score.size())
         log_p_y = F.log_softmax(score, dim=1)
+#         print(log_p_y.size()); exit(0)
         log_p_y = log_p_y.view(self.n_way_u, self.n_query, -1)
 
         # compute targets of unknown : [n_class_known]
