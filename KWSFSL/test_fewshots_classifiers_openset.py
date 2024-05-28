@@ -7,7 +7,7 @@ import time
 import numpy as np
 
 # needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
+# os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
 
 import torch
 import torch.optim as optim
@@ -49,29 +49,25 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
 
         # perform classification
         p_y, target_ids = classifier.evaluate_batch(x, labels, return_probas=False)
-
-        # compute the probabilities
-        _, y_pred = p_y.max(1)
-        conf_val = p_y.gather(1, y_pred.unsqueeze(1)).squeeze().view(-1)
+        conf_val, y_pred = p_y.max(1)
 
         if '_unknown_' in classifier.word_to_index.keys():
             y_pred_ood = p_y[:,unknow_id]
-
-            unknow_lab = torch.zeros(p_y.size(0)).add(unknow_id).long()
-            y_pred_close = p_y[(1 - torch.nn.functional.one_hot(unknow_lab, p_y.shape[1])).bool()].reshape(p_y.shape[0], -1) 
+            y_pred_close = np.delete(p_y, unknow_id, 1)
         else:
             y_pred_close = p_y
-            y_pred_ood = None
-        if y_pred_ood != None:
-            y_pred_ood_tot += y_pred_ood.tolist()
-        y_pred_close_tot += y_pred_close.tolist()
+            y_pred_ood = np.array([])
 
         y_pred_tot +=  y_pred.tolist()
+        y_pred_ood_tot += y_pred_ood.tolist()
+        y_pred_close_tot += y_pred_close.tolist()
+
         target_ids = target_ids.squeeze().tolist()
         y_true += [target_ids] if isinstance(target_ids, int) else target_ids
 
         conf_val = conf_val.tolist()
         y_score += [conf_val] if isinstance(conf_val, int) else conf_val
+
     return y_score, y_pred_tot, y_true, y_pred_close_tot, y_pred_ood_tot
 
 
@@ -80,6 +76,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     opt = vars(parser.parse_args())
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['cuda_idx']
 
     # load the encoder
     if os.path.isfile(opt['model.model_path']):    
@@ -106,7 +103,7 @@ if __name__ == '__main__':
         raise ValueError("Classifier {} is not valid".format(opt['fsl.classifier']))
 
     classifier.backbone.criterion.distance = opt['fsl.test.distance']
-    print(classifier)
+    #print(classifier)
 
     # import tasks: positive samples and optionative negative samples for open set
     # current limitations: tasks belongs to same dataset (separate eyword split)
@@ -135,9 +132,14 @@ if __name__ == '__main__':
                     opt['data.cuda'], speech_args)
             print("The task {} is used for negative samples".format(
                     neg_task))       
+    elif dataset == 'MSWC':
+        from data.MSWCtest import MSWCDataset
+        ds = MSWCDataset(data_dir, pos_task, opt['data.cuda'], speech_args)
+        ds_neg = None
+        if neg_task is not None:
+            ds_neg = MSWCDataset(data_dir, neg_task, opt['data.cuda'], speech_args)
     else:
         raise ValueError("Dataset not recognized")
-
 
     # Few-Shot Parameters to configure the classifier for testing
     # the test is done over n_episodes
@@ -150,9 +152,8 @@ if __name__ == '__main__':
     # setup dataloader of support samples
     # support samples are retrived from the training split of the dataset
     # if include_unknown is True, the _unknown_ class is one of the num_classes
-    sampler = ds.get_episodic_fixed_sampler(num_classes,  n_way, n_episodes, 
-        fixed_silence_unknown = fixed_silence_unknown, include_unknown = speech_args['include_unknown'])
-    train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes, sampler=sampler)
+    train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes)
+    
 
     # Postprocess arguments
     #   list of log variables. may be turned into a configurable list usign opt['log.fields'] as 
@@ -176,12 +177,12 @@ if __name__ == '__main__':
         support_samples = support_sample['data']
         # extract label list          
         class_list = support_sample['label'][0]
+        #print(class_list)
         # fit the classifier on the support samples
         classifier.fit_batch_offline(support_samples, class_list)
+        #get the index of the unknown class of the classifier
+        unk_idx = classifier.word_to_index.get('_unknown_', None)
 
-        #get the index of the unknown class of the classifier if there is the unknown class
-        unk_idx = classifier.word_to_index['_unknown_'] if '_unknown_' in classifier.word_to_index.keys() \
-                                                        else None
         '''
             Few-shot test in open set
             NB: _unknown_ is the negative class as part of the class_list
@@ -217,7 +218,7 @@ if __name__ == '__main__':
         output["test"][field] = {}
         output["test"][field]["mean"] = mean
         output["test"][field]["std"] = std
-        print("Final Test: Avg {} is {} with std dev {}".format(field, mean, std))
+        print("Final Test: Avg {} is {:.5f} with std dev {:.5f}".format(field, mean, std))
 
     # write log
     if speech_args['include_unknown']:
@@ -228,9 +229,12 @@ if __name__ == '__main__':
         fsl_z_norm = "NOTN"
     
     
-    output_log_file = 'evalGSC_fsl_{}_{}_{}_{}_{}_{}'.format(opt['fsl.classifier'],fsl_z_norm,task,n_way,n_support,n_episodes)
+    output_log_file = 'eval{}_fsl_{}_{}shot'.format(
+        opt['fsl.test.note'], opt['fsl.classifier'], n_support
+    )
     output_file = os.path.join(os.path.dirname(opt['model.model_path']), output_log_file)
     print('Writing log to:', output_file)
 
     with open(output_file, 'w') as fp:
-        json.dump(output, fp)
+        print(f'{n_episodes} EPISODES', file=fp)
+        json.dump(output, fp, indent=2)

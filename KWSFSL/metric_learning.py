@@ -22,7 +22,7 @@ import log as log_utils
 
 
 # needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
+# os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
 
 
 if __name__ == '__main__':
@@ -30,8 +30,10 @@ if __name__ == '__main__':
     # read and post-process options
     from parser_kws import *
     args = parser.parse_args()
-
     opt = vars(parser.parse_args())
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['cuda_idx']
+
     opt['model.x_dim'] = list(map(int, opt['model.x_dim'].split(',')))
     opt['log.fields'] = ['loss']
     speech_args = filter_opt(opt, 'speech')
@@ -99,7 +101,6 @@ if __name__ == '__main__':
     dataset = opt['speech.dataset']
     data_dir = opt['speech.default_datadir'] 
     train_task = opt['speech.task'] 
-    print('Train Dataset: ', train_task)
     
     #prepare datasets (supported:  'googlespeechcommand' , 'MSWC')
     if dataset == 'googlespeechcommand':
@@ -149,6 +150,7 @@ if __name__ == '__main__':
         best_loss = checkpoint['best_loss']
         wait = checkpoint['wait']
         start_episode = checkpoint['start_episode']
+        meters = checkpoint['meters']
     else:
         if not os.path.isdir(opt['log.exp_dir']):
             os.makedirs(opt['log.exp_dir'])
@@ -165,6 +167,7 @@ if __name__ == '__main__':
         best_loss = np.inf
         wait = 0    
         start_episode = 0
+        meters = { 'train': { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] } }
     
     
     ##################################################
@@ -187,10 +190,10 @@ if __name__ == '__main__':
         episodic_loader = ds_tr.get_episodic_dataloader('training', n_way_tr, 
             n_support+n_query, n_episodes-start_episode)
 
-        for split, split_meters in meters.items():
-            for field, meter in split_meters.items():
-                meter.reset()
-        epoch_size = len(episodic_loader)
+        if start_episode == 0:
+            for split, split_meters in meters.items():
+                for field, meter in split_meters.items():
+                    meter.reset()
 
         ep_idx = start_episode
         for samples in tqdm(episodic_loader,desc="Epoch {:d} train".format(epoch + 1)):
@@ -208,10 +211,10 @@ if __name__ == '__main__':
             
             ep_idx+=1
 
-            # save checkpoint every 10 episodes
+            # save checkpoint every 1/5 of total episodes
             # if cuda is used, the checkpoint reload cuda tensors
             stored_ckpt = False
-            if (ep_idx)%10 == 0:
+            if ep_idx % (n_episodes//5) == 0 or ep_idx == n_episodes:
                 # to avoid saving issues, try first to save into a tmp file. if success copy
                 # (this may be avoided. I did this for some issues with the nfs!!)
                 checkpoint_file_tmp = os.path.join(opt['log.exp_dir'], 'checkpoint_tmp.pt')
@@ -224,6 +227,7 @@ if __name__ == '__main__':
                         'start_episode': ep_idx, 
                         'best_loss': best_loss,
                         'wait': wait,
+                        'meters': meters
                         }, checkpoint_file_tmp)
 
                     # check if it is correctly stored
@@ -237,13 +241,25 @@ if __name__ == '__main__':
                         stored_ckpt = True
 
         # end epoch
+        if start_episode < n_episodes: scheduler.step()
         start_episode = 0
-        scheduler.step()
+
+        # calculate loss on test set
+        meters['test'] = { field: tnt.meter.AverageValueMeter() for field in opt['log.fields'] }
+        test_loader = ds_tr.get_episodic_dataloader('testing', n_way_tr, 10, n_episodes)
+        for samples in tqdm(test_loader, desc="Epoch {:d} test".format(epoch + 1)):
+            samples_ep = samples['data']
+            if cuda:
+                samples_ep = samples_ep.cuda()
+            with torch.no_grad():
+                loss, output = model.loss(samples_ep)
+            for field, meter in meters['test'].items():
+                meter.add(output[field])
 
         # log at the end of the epoch
         meter_vals = log_utils.extract_meter_values(meters)
-        print("Epoch {:02d}: {:s}".format(epoch, log_utils.render_meter_values(meter_vals)))
-        meter_vals['epoch'] = epoch
+        print("Epoch {:d}: {:s}".format(epoch+1, log_utils.render_meter_values(meter_vals)))
+        meter_vals['epoch'] = epoch+1
         with open(trace_file, 'a') as f:
             json.dump(meter_vals, f)
             f.write('\n')
@@ -253,6 +269,5 @@ if __name__ == '__main__':
         if cuda:
             model.cuda()
         
+        del meters['test']
         epoch += 1
-
-

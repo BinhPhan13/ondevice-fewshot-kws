@@ -39,6 +39,25 @@ class EpisodicFixedBatchSampler(object):
     def __iter__(self):
         for i in range(self.n_episodes):
             yield self.sampling[i]
+            
+def partition(L, ratio):
+    ratio = np.cumsum(ratio) * len(L) / sum(ratio)
+    ratio = np.round(ratio).astype(int)
+    
+    partitions = []
+    prev = None
+    for r in ratio:
+        partitions.append(L[prev:r])
+        prev = r
+
+    return partitions
+
+SEED = 42
+RATIO = [2, 1, 4]
+SILENCE_LABEL = '_silence_'
+SILENCE_INDEX = 1
+UNKNOWN_WORD_LABEL = '_unknown_'
+UNKNOWN_WORD_INDEX = 0
 
 class MSWCDataset:
     def __init__(self, data_dir, MSWCtype, cuda, args):
@@ -52,6 +71,9 @@ class MSWCDataset:
         self.time_shift_ms = args['time_shift']
         self.desired_samples = int(self.sample_rate * self.clip_duration_ms / 1000)
 
+        assert MSWCtype in {'pos', 'neg'}
+        self.task = MSWCtype
+
         # main data dir
         self.data_dir = data_dir
         self.csv_dir = args['default_csvdir']
@@ -62,7 +84,6 @@ class MSWCDataset:
         self.background_volume = args['noise_snr']
         self.background_frequency= args['noise_frequency']
         if self.use_background:
-            print('Load background data')
             self.background_data = self.load_background_data()
             if self.background_data:
                 print('Success load background data!')
@@ -70,65 +91,25 @@ class MSWCDataset:
                 print('Failed load background data!')
         else:
             self.background_data = []
-        self.mfcc = self.build_mfcc_extractor()
         
-        #try if can I include cuda here
-        #cuda=True
         self.use_wav = args['use_wav']
         self.cuda = cuda
-        if cuda:
-            self.mfcc.cuda()
-        
-        #remove data from the GSC10 dataset
-        avoid_words = {'yes','no','up','down','left','right','on','off','stop','go'}
-        
-        min_words = 2
-        balance = False
-        if MSWCtype == 'MSWC350':
-            n_classes = 350
-            balance = True
-        elif MSWCtype == 'MSWC200':
-            n_classes = 200
-            balance = True
-        elif MSWCtype == 'MSWC500':
-            n_classes = 500
-            balance = True
-        elif MSWCtype == 'MSWC500U':
-            n_classes = 500
-        elif MSWCtype == 'MSWC1000U':
-            n_classes = 1000
-        elif MSWCtype == 'MSWC5000U':
-            n_classes = 5000
-        elif MSWCtype == 'MSWC10000U':
-            n_classes = 10000
-        elif MSWCtype == 'MSWC15000U':
-            n_classes = 15000
-        elif MSWCtype == 'MSWC-LargeU':
-            n_classes = None
-            min_words = 2
-            balance = False
-        else:
-            raise ValueError('Partition {} not supported for MSWC dataset'.format(MSWCtype) )
+        self.unknown = args['include_unknown']
+        self.silence = self.task == 'neg'
 
-        self.generate_data_dictionary(n_classes, min_words, balance, avoid_words)
-        self.max_class = len(self.wanted_words)
-        
-        self.word_to_index = {}
-        for i,word in enumerate(self.wanted_words):
-            self.word_to_index[word] = i
+        self.unknown_ratio = 0.1
+        self.silence_ratio = 0.1
+        self.generate_data_dictionary()
 
-    def generate_data_dictionary(self, n_classes=None, min_words=0, balance = True, avoid_words = None):
-
+    def generate_data_dictionary(self):
         # Prepare data sets
         self.data_set = {
             'training': defaultdict(list),
             'validation': defaultdict(list),
             'testing': defaultdict(list)
         }
-        wanted_words = []        
-
-        for split in ["training","validation", "testing"]:
-            
+        unknown_set = {'training': [], 'validation': [], 'testing': []}
+        for split in ["training","validation","testing"]:
             # parse the right file
             if split == 'training':
                 split_name = 'train'
@@ -137,84 +118,71 @@ class MSWCDataset:
             elif split == 'testing':
                 split_name = 'test'
             df = pd.read_csv(self.csv_dir+split_name+".csv")
-            print(f"Done reading {split_name}.csv!")
-            parse_word = {}
-            # compute the number of samples per class
-            for word in df['WORD']:
-                if word in avoid_words:
-                    continue
-            
-                if word in parse_word.keys():
-                    parse_word[word] +=1
-                else:
-                    parse_word[word] = 1
-            sorted_parse_word = sorted(parse_word.items(), key=lambda kv: kv[1], reverse=True)
 
-            tot_samples = 0
-            min_samples = len(df['WORD'])
-            max_samples = 0 
             if split == "training":
-                if n_classes is None:
-                    n_classes = len(sorted_parse_word)
+                all_words = {}
+                for word in df['WORD']: all_words[word] = 1
+                all_words = sorted(all_words)
+                
+                random.seed(SEED)
+                random.shuffle(all_words)
+                pos, unknown, neg = partition(all_words, RATIO)
+                if self.task == 'pos':
+                    wanted_words = pos
+                    unknown_words = unknown
+                else:
+                    wanted_words = neg
+                    unknown_words = []
 
-                wanted_words = []
-                for item in sorted_parse_word[:n_classes]:
-                    word = item[0]
-                    n_occur = item[1]
-                    if n_occur >= min_words:
-                        wanted_words.append(word)
-                        min_samples = min(min_samples, n_occur)
-                        max_samples = max(max_samples, n_occur)
-                        tot_samples += n_occur
+                unknown_words = set(unknown_words)
+                # build word to index
+                skip = 0
+                if self.silence: skip +=1
+                if self.unknown: skip +=1
+                else:
+                    global SILENCE_INDEX
+                    SILENCE_INDEX = SILENCE_INDEX -1
 
-                wanted_words = set(wanted_words)
-                self.wanted_words = wanted_words
-                self.n_classes = len(wanted_words)
-
-            else:
-                for item in sorted_parse_word:
-                    word = item[0]
-                    n_occur = item[1]
-                    if word in wanted_words and n_occur >= min_words:
-                        min_samples = min(min_samples, n_occur)
-                        max_samples = max(max_samples, n_occur)
-                        tot_samples += n_occur
-
-            n_classes = len(wanted_words)
-
-            print("[Split: {}] {} classes with a number of words between {} and {}. Total of {} samples" \
-             .format(split, n_classes, min_samples, max_samples, tot_samples))
+                self.word_to_index = {}
+                if self.silence:
+                    self.word_to_index[SILENCE_LABEL] = SILENCE_INDEX
+                if self.unknown:
+                    self.word_to_index[UNKNOWN_WORD_LABEL] = UNKNOWN_WORD_INDEX
+                for idx, word in enumerate(wanted_words):
+                    self.word_to_index[word] = idx + skip
 
             # build the dict dataset split
-            word_list = df['WORD']
-            file_list = df['LINK']
-            spk_list = df['SPEAKER']
-            samples_per_words = {}
-            for i,word in enumerate(word_list):
-                if (i+1) % 1000 == 0 or (i+1) == len(word_list):
-                    print(f"{i+1:>10}/{len(word_list):>10}\r", end='')
+            for word, link in zip(df['WORD'], df['LINK']):
+                if self.use_wav: link = link.replace(".opus",".wav")
+                if word in self.word_to_index:
+                    self.data_set[split][word].append({'label': word, 'file': link})
+                elif word in unknown_words:
+                    unknown_set[split].append({'label': UNKNOWN_WORD_LABEL, 'file': link})
 
-                if word in wanted_words and parse_word[word] >= min_samples:
-                    wav_path = file_list[i]
-                    if self.use_wav: wav_path = wav_path.replace(".opus",".wav")
+             # Add silence and unknown words to each set
+            set_size = len(sum(self.data_set[split].values(), []))
+            if self.unknown and unknown_set[split]:
+                unknown_size = min(
+                    int(math.ceil(set_size * self.unknown_ratio)),
+                    len(unknown_set[split])
+                )
+                random.seed(SEED)
+                self.data_set[split][UNKNOWN_WORD_LABEL] = random.sample(
+                    unknown_set[split], unknown_size)
 
-                    speaker_id = spk_list[i]
-                    if balance:
-                        if word in samples_per_words.keys():
-                            if samples_per_words[word] < min_samples:
-                                samples_per_words[word] += 1
-                                self.data_set[split][word].append({'label': word, 'file': wav_path})
-                        else:
-                            samples_per_words[word] = 1
-                            self.data_set[split][word].append({'label': word, 'file': wav_path})
-                    else:
-                        self.data_set[split][word].append({'label': word, 'file': wav_path})
-            
+            if self.silence:
+                silence_path = df.iloc[0]['LINK']
+                silence_size = int(math.ceil(set_size * self.silence_ratio))
+                self.data_set[split][SILENCE_LABEL] = [
+                    {'label': SILENCE_LABEL, 'file': silence_path}
+                    for _ in range(silence_size)
+                ]
+
             del df
 
         for split, d in self.data_set.items():
             self.data_set[split] = dict(d)
-
+        
     def get_transform_dataset(self, file_dict, classes, filters=None):
         # classes is a list of classes
         transforms = compose([
@@ -235,15 +203,14 @@ class MSWCDataset:
     def get_episodic_fixed_sampler(self, num_classes,  n_way, n_episodes, fixed_silence_unknown = False):
         return EpisodicFixedBatchSampler(num_classes, n_way, n_episodes, fixed_silence_unknown = fixed_silence_unknown)    
     
-    def get_episodic_dataloader(self, set_index, n_way, n_samples, n_episodes, sampler='episodic', 
-        include_silence=True, include_unknown=True, unique_speaker=False):
-
+    def get_episodic_dataloader(self, set_index, n_way, n_samples, n_episodes, sampler='episodic'):
         if set_index not in ['training', 'validation', 'testing']:
             raise ValueError("Set index = {} in episodic dataset is not correct.".format(set_index))
 
         dataset = self.data_set[set_index]
         if sampler == 'episodic':
-            sampler = self.get_episodic_fixed_sampler(len(dataset), n_way, n_episodes)
+            # load all possible classes
+            sampler = self.get_episodic_fixed_sampler(len(dataset), len(dataset), n_episodes)
 
         dl_list=[]        
         for k, keyword in enumerate(dataset):
@@ -264,19 +231,18 @@ class MSWCDataset:
         return dl
     
     
-    def get_iid_dataloader(self, split, batch_size, unique_speaker=False):
-             
-        ts_ds = self.get_transform_dataset(self.data_set[split], self.wanted_words)
-        if split =='training':
-            batch_size = batch_size
-        else: 
-            batch_size = 1
-        dl = torch.utils.data.DataLoader(ts_ds, batch_size=batch_size, pin_memory=not self.cuda, shuffle=True, num_workers=8)
+    def get_iid_dataloader(self, split, batch_size, class_list=False):
+        if not class_list: class_list = list(self.data_set[split].keys())
+        ts_ds = self.get_transform_dataset(self.data_set[split], class_list)
+        dl = torch.utils.data.DataLoader(
+            ts_ds, batch_size=batch_size,
+            pin_memory=not self.cuda, shuffle=True, num_workers=8
+        )
 
         return dl
     
     def num_classes(self):
-        return len(self.wanted_words)
+        return len(self.word_to_index)
         
     def label_to_idx(self, k, key_out, d):
         label_index = self.word_to_index[d[k]]
@@ -394,15 +360,14 @@ class MSWCDataset:
 
     
     def load_audio(self, key_path, key_label, out_field, d):
-        #format d struct: {'label': 'stop', 'file': '../../data/speech_commands/GSC/stop/879a2b38_nohash_3.wav', 'speaker': '879a2b38'}
         filepath = os.path.join(self.data_dir, d[key_path]) # d[key_path] -> LINK entry in split file
         sound, sr = torchaudio.load(filepath=filepath, normalize=True)
         if sr != self.sample_rate:
             sound = torchaudio.functional.resample(sound, sr, self.sample_rate)
+
+        # For silence samples, remove any sound
+        if d[key_label] == SILENCE_LABEL:
+             sound.zero_()
+
         d[out_field] = sound
-
         return d
-
-
-
-    

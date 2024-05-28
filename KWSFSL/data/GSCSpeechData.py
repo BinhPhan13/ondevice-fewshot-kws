@@ -413,10 +413,19 @@ class GSCSpeechDataset:
         unknown_set = {'validation': [], 'testing': [], 'training': []}
         all_words = {}
         # Find all audio samples
-        search_path = os.path.join(self.data_dir, '*', '*.wav')
+        wav_paths_file = os.path.join(self.data_dir, '.wav_paths.txt')
+        if os.path.isfile(wav_paths_file):
+            with open(wav_paths_file) as f:
+                wav_paths = [line.strip() for line in f]
+        else:
+            search_path = os.path.join(self.data_dir, '*', '*.wav')
+            wav_paths = glob.glob(search_path)
+            with open(wav_paths_file, 'w') as f:
+                for wav_path in wav_paths:
+                    print(wav_path, file=f)
         
         #parse the folders
-        for wav_path in glob.glob(search_path):
+        for wav_path in wav_paths:
             _ , word = os.path.split(os.path.dirname(wav_path))
             split_wav_path = wav_path.split('/')
             ind = len(split_wav_path) - 1
