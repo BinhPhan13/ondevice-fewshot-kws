@@ -25,9 +25,7 @@ from classifiers.NCM_openmax import NCMOpenMax
 from classifiers.peeler import PeelerClass
 from classifiers.dproto import DProto
 
-
-from metrics import compute_metrics 
-
+from metrics import compute_metrics
 
 def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     y_pred_tot = []
@@ -40,7 +38,6 @@ def test_model(data_loader, classifier, unknow_id, force_unk_testdata=False):
     score_wrong = 0
 
     for sample in tqdm(data_loader):
-
         x = sample['data']
         labels = sample['label'] # labela
 
@@ -136,7 +133,6 @@ if __name__ == '__main__':
             ds_neg = MSWCDataset(data_dir, neg_task, opt['data.cuda'], speech_args)
     else:
         raise ValueError("Dataset not recognized")
-        
 
     # Few-Shot Parameters to configure the classifier for testing
     # the test is done over n_episodes
@@ -149,6 +145,7 @@ if __name__ == '__main__':
     # setup dataloader of support samples
     # support samples are retrived from the training split of the dataset
     # if include_unknown is True, the _unknown_ class is one of the num_classes
+    torch.manual_seed(17)
     train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes)
     
 
@@ -190,6 +187,7 @@ if __name__ == '__main__':
         # load only samples from the target classes and not negative _unknown_
         query_loader = ds.get_iid_dataloader('testing', opt['fsl.test.batch_size'], 
             class_list = [x for x in class_list if 'unknown' not in x])
+
         y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos = test_model(query_loader, classifier, unk_idx)
 
         # test on the negative dataset (_unknown_) if present    

@@ -155,7 +155,7 @@ class NCMOpenMax(nn.Module):
             background_clamped = torch.clamp(background_add, -1.0, 1.0)
             noisy_samples.append(background_clamped)
         x = torch.cat(noisy_samples, dim=1)
-        print(x.size())
+#         print(x.size())
         return x
 
     @torch.no_grad()
@@ -182,7 +182,7 @@ class NCMOpenMax(nn.Module):
         zq = zq.view(self.num_classes, n_support, zq.size(-1))
         z_proto = zq.mean(1)
 
-        #print(zq.size(), z_proto.size())
+#         print(zq.size(), z_proto.size())
 
         #########################################################
         # get more samples to compute the distributions
@@ -205,10 +205,10 @@ class NCMOpenMax(nn.Module):
                 continue
             self.word_to_index[category] = catId
         
-            #print('***** Category:', category, i,' *****')
+#             print('***** Category:', category, i,' *****')
             weibull_model[catId] = {}
             meantrain_vec = z_proto[i].unsqueeze(0)
-            #print(meantrain_vec.size(), zq[i].size())
+#             print(meantrain_vec.size(), zq[i].size())
             proto_vector.append(z_proto[i])
             
             if self.backbone.criterion.distance == 'euclidean': 
@@ -218,23 +218,24 @@ class NCMOpenMax(nn.Module):
                 distances = 1 - F.cosine_similarity( 
                     zq[i].unsqueeze(1).expand( zq[i].size(0), *meantrain_vec.size()), 
                     meantrain_vec, dim=2)
-            
-            #print(distances.size())
+#             print(distances.size())
+#             print(zq[i].size())
             distances = distances.squeeze().cpu().numpy()
             #meantrain_vec = meantrain_vec.squeeze().cpu().numpy()
 
             weibull_model[catId]['distances_%s'%self.backbone.criterion.distance] = distances
             weibull_model[catId]['mean_vec'] = meantrain_vec
 
-            #print(distances)
+#             print(distances)
+#             print(weibull_model)
 
             mr = libmr.MR()
             tailtofit = sorted(distances)[-tailsize:]
-            #print(tailtofit, mr.is_valid)
+#             print(tailtofit, mr.is_valid)
             
             mr.fit_high(tailtofit, len(tailtofit))
             weibull_model[catId]['weibull_model'] = mr
-            #print('after update:', mr.is_valid)
+#             print('after update:', mr.is_valid)
 
             catId +=1
 
@@ -269,6 +270,7 @@ class NCMOpenMax(nn.Module):
         else:
             zq = test_x
 
+#         print(zq.size())
         
 
         if self.backbone.criterion.distance == 'euclidean': 
@@ -278,11 +280,12 @@ class NCMOpenMax(nn.Module):
                     zq.unsqueeze(1).expand( zq.size(0), *self.z_proto.size()), 
                     self.z_proto, dim=2)
 
+#         print(distances.size())
 
         # compute openmax
         NCLASSES = len(self.weibull_model) 
         n_batch = distances.size(0)
-        #print(NCLASSES, distances)
+#         print(NCLASSES, n_batch)
 
         count = 0
         score_batch = []
@@ -292,24 +295,27 @@ class NCMOpenMax(nn.Module):
             openmax_unknown_score = 0
 
             feat_vec = zq[el].unsqueeze(0)
+#             print(feat_vec.shape)
             distance_score = F.softmax (-distances[el], dim=0)
-            #print('getting the score:',distances[el],distance_score)
+#             print('getting the score:',distances[el],distance_score)
 
             for categoryid in range(NCLASSES):
                 # get distance between current channel and mean vector
                 channel_distance = distances[el,categoryid].item()
                 category_score = distance_score[categoryid].item()
+
                 # obtain w_score for the distance and compute probability of the distance
                 # being unknown wrt to mean training vector and channel distances for
                 # category and channel under consideration
                 wscore = self.weibull_model[categoryid]['weibull_model'].w_score(channel_distance)
+#                 print(f"W Score: {categoryid}: {wscore}")
                 #modified_fc8_score = category_score * ( 1 - wscore)
                 #openmax_class_score += [modified_fc8_score]
                 #openmax_unknown_score += (category_score - modified_fc8_score)                
                 
                 modified_fc8_score = channel_distance * wscore
                 openmax_class_score += [modified_fc8_score]
-                openmax_unknown_score += (channel_distance - modified_fc8_score)    
+                openmax_unknown_score += (channel_distance - modified_fc8_score)
                  
                 #print(wscore, channel_distance ,modified_fc8_score, openmax_unknown_score)
 

@@ -77,6 +77,7 @@ class NearestClassMean(nn.Module):
         else:
             scores = - euclidean_dist(X, self.muK)
 
+        scores[:, self.word_to_index['_unknown_']] = -1e7
         # return predictions or probabilities
         if not return_probas:
             return scores.cpu()
