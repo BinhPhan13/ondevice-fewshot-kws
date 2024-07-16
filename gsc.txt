@@ -1,0 +1,25 @@
+python ondevice-fewshot-kws/KWSFSL/test_fewshots_classifiers_openset.py
+--data.cuda
+--cuda_idx 2
+
+--speech.dataset googlespeechcommand
+--speech.task GSC12,GSC22
+--speech.include_unknown
+--speech.default_datadir GSC/
+
+--fsl.classifier ncm
+--fsl.test.n_way 11
+--fsl.test.n_support 10
+--fsl.test.batch_size 256
+
+--fsl.test.n_episodes 100
+--model.model_path results/HIC.8/best_model.pt
+--model.model_path results/HIC.6.1/best_model.pt
+--model.model_path results/HIC.6/best_model.pt
+--model.model_path results/HIC.5/best_model.pt
+--model.model_path results/HIC.3/best_model.pt
+--model.model_path results/HIC.2/best_model.pt
+--model.model_path ondevice-fewshot-kws/results/TL_MSWC500U_DSCNNLLN/best_model.pt
+--model.model_path results/HIC.9/best_model.pt
+--model.model_path results/HIC.9.1/best_model.pt
+--model.model_path results/HIC.9.2/best_model.pt
