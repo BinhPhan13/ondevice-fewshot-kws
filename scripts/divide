@@ -1,0 +1,27 @@
+#!/opt/conda/bin/python
+from sys import argv
+from collections import defaultdict
+import os
+
+try: FILE = argv[1]
+except IndexError: print('usage: divide file'); exit(1)
+
+split_lines = defaultdict(list)
+with open(FILE) as f:
+    header = f.readline()
+    split, header = header.split(',', 1)
+    if split != 'SET': print('wrong file format'); exit(1)
+
+    for line in f:
+        split, rest = line.split(',', 1)
+        split = split.lower()
+        split_lines[split].append(rest)
+
+split_lines = dict(split_lines)
+
+abspath = os.path.abspath(FILE)
+os.chdir(os.path.dirname(abspath))
+for split, lines in split_lines.items():
+    with open(f'{split}.csv', 'w') as f:
+        print(header, end='', file=f)
+        for line in lines: print(line, end='', file=f)

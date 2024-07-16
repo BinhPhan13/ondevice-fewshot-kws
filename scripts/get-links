@@ -1,0 +1,14 @@
+#!/bin/bash
+cd /workspace/MSWC
+
+outdir='links'
+if [ -d $outdir ]; then rm -r $outdir; fi
+mkdir -v $outdir
+
+langs=$(cat languages)
+for lang in $langs; do
+    echo $lang
+    tail -n +2 splits/$lang/$lang\_splits.csv > tmp
+    parse-col -i 1 -s ',' tmp > $outdir/$lang.links
+done | tqdm --total $(cat languages | wc -w) > /dev/null
+rm tmp

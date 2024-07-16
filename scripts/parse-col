@@ -1,0 +1,16 @@
+#!/opt/conda/bin/python
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('file', metavar='FILE', help='file to parse')
+parser.add_argument('-i', metavar='IDX', default=0, type=int, dest='index')
+parser.add_argument('-s', metavar='SEP', default=None, dest='sep')
+
+args = parser.parse_args()
+index = args.index
+sep = args.sep
+
+with open(args.file) as f:
+    lines = [line.strip().split(sep)[index] for line in f]
+
+for line in lines: print(line)

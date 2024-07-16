@@ -1,0 +1,24 @@
+#!/bin/bash
+cd /workspace/MSWC
+
+if [ -z $1 ]; then echo "usage: wav-convert language"; exit 0; fi
+lang=$1
+
+if ! [ -d audio/$lang ]; then echo "language $lang not exist!"; exit 0; fi
+audio_dir=audio/$lang/clips
+
+links=($(cat links/$lang.links))
+num_links=${#links[@]}
+batch=64
+
+echo "Begin!"
+for i in ${!links[@]}; do
+    echo $i
+    link=$audio_dir/${links[i]}
+    ffmpeg -y -loglevel 24 -i $link -c:a pcm_s16le ${link%.opus}.wav &
+
+    i=$(($i+1))
+    if [ $(($i % $batch)) -eq 0 ] || [ $i -eq $num_links ];
+        then wait;
+    fi
+done | tqdm --total $num_links > /dev/null
