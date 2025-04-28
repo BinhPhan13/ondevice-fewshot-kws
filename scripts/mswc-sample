@@ -163,7 +163,7 @@ header = 'LINK,WORD,VALID,SPEAKER,GENDER'
 print(header)
 
 extractors = [
-    Extractor(args.split, lang, words)
+    Extractor(args.what, lang, words)
     for lang, words in lang_words.items()
 ]
 ps = [Process(target=extractor.extract) for extractor in extractors]
