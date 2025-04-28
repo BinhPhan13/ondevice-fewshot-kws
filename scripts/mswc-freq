@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 if [ -z $1 ]; then echo "usage: mswc-freq DATASET_HOME"; exit 1; fi
 cd $1
 
