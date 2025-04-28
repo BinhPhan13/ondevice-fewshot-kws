@@ -29,7 +29,8 @@ parser.add_argument('-r', action='store_true',
 parser.add_argument('-seed', default=None, type=int,
         help="seed to shuffle the histogram")
 
-parser.add_argument('-go', action='store_true', help='execute the preview')
+parser.add_argument('-go', action='store_true',
+        help='execute the preview, should redirect stdout')
 parser.add_argument('-goseed', default=0, type=int,
         help='seed for select audio files')
 args = parser.parse_args()
