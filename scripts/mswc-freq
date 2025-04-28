@@ -3,7 +3,7 @@ if [ -z $1 ]; then echo "usage: mswc-freq DATASET_HOME"; exit 1; fi
 cd $1
 
 langs=$(ls splits) || exit 1
-splits="train dev test splits"
+splits="train dev test"
 
 handle_lang() {
   lang=$1
