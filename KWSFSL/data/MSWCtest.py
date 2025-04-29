@@ -76,7 +76,7 @@ class MSWCDataset:
 
         # main data dir
         self.data_dir = data_dir
-        self.csv_dir = args['default_csvdir']
+        self.csv_dir = args['csvdir']
         self.noise_dir = args['noise_dir']
 
         # add noise
@@ -85,10 +85,8 @@ class MSWCDataset:
         self.background_frequency= args['noise_frequency']
         if self.use_background:
             self.background_data = self.load_background_data()
-            if self.background_data:
-                print('Success load background data!')
-            else:
-                print('Failed load background data!')
+            if self.background_data: print('Success load background data!')
+            else: print('Failed load background data!')
         else:
             self.background_data = []
         
@@ -231,7 +229,7 @@ class MSWCDataset:
         return dl
     
     
-    def get_iid_dataloader(self, split, batch_size, class_list=False):
+    def get_iid_dataloader(self, split, batch_size, class_list=[]):
         if not class_list: class_list = list(self.data_set[split].keys())
         ts_ds = self.get_transform_dataset(self.data_set[split], class_list)
         dl = torch.utils.data.DataLoader(
@@ -298,10 +296,9 @@ class MSWCDataset:
     def load_background_data(self):
         background_path = os.path.join(self.noise_dir, '*.wav')
         background_data = []
-        if self.use_background:
-            for wav_path in glob.glob(background_path):
-                bg_sound, bg_sr = torchaudio.load(wav_path)
-                background_data.append(bg_sound.flatten())
+        for wav_path in glob.glob(background_path):
+            bg_sound, bg_sr = torchaudio.load(wav_path)
+            background_data.append(bg_sound.flatten())
         return background_data
     
     def build_mfcc_extractor(self):

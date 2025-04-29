@@ -1,8 +1,8 @@
-python ondevice-fewshot-kws/KWSFSL/test_fewshots_classifiers_openset.py
+python ondevice-fewshot-kws/KWSFSL/test.fewshots.py
 --data.cuda
 --cuda_idx 2
 
---speech.dataset MSWC
+--speech.dataset mswc
 --speech.task pos,neg
 --speech.include_unknown
 
@@ -10,9 +10,11 @@ python ondevice-fewshot-kws/KWSFSL/test_fewshots_classifiers_openset.py
 --speech.include_noise
 --speech.noise_dir MSWC/noise/
 
---speech.default_datadir MSWC/audio/
---speech.default_csvdir MSWC/partitions/test/fy-NL/
---fsl.test.note FY-NL
+--speech.datadir MSWC/audio/
+--speech.csvdir MSWC/partitions/test/fy-NL/
+
+--log.note FY-NL
+--log.fields aucROC,accuracy_pos,accuracy_neg,acc_prec95,frr_prec95
 
 --fsl.classifier ncm_openmax
 --fsl.test.n_way 11

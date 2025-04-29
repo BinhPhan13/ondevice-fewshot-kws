@@ -7,9 +7,9 @@ default_model_name = 'e2e_conv'
 default_encoding = 'DSCNNL'
 default_model_prep = 'mfcc'
 
-default_dataset = 'googlespeechcommand'
+default_dataset = 'gsc'
 default_datadir = None
-default_split = 'GSC12'
+default_task = 'GSC12'
 
 # GPU args
 parser.add_argument('--data.nworkers', type=int, default=8, metavar="NWORKERS",
@@ -75,6 +75,7 @@ parser.add_argument('--train.margin', type=float, default=0.5,
 
 
 # log args
+parser.add_argument('--log.note', type=str, default='gsc')
 default_fields = 'loss,acc'
 parser.add_argument('--log.fields', type=str, default=default_fields, metavar='FIELDS',
                     help="fields to monitor during training (default: {:s})".format(default_fields))
@@ -86,11 +87,11 @@ parser.add_argument('--log.exp_dir', type=str, default=default_exp_dir, metavar=
 # speech data args
 parser.add_argument('--speech.dataset', type=str, default=default_dataset, metavar='DS',
                     help="data set name (default: {:s})".format(default_dataset))
-parser.add_argument('--speech.task', type=str, default=default_split, metavar='SP',
-                    help="split name (default: {:s})".format(default_split))
-parser.add_argument('--speech.default_datadir', type=str, default=default_datadir, metavar='DIR',
+parser.add_argument('--speech.task', type=str, default=default_task, metavar='SP',
+                    help="split name (default: {:s})".format(default_task))
+parser.add_argument('--speech.datadir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the dataset")
-parser.add_argument('--speech.default_csvdir', type=str, default=default_datadir, metavar='DIR',
+parser.add_argument('--speech.csvdir', type=str, default=default_datadir, metavar='DIR',
                     help="path to csv split files")
 parser.add_argument('--speech.use_wav', action='store_true', help="use wav in MSWC")
 
@@ -130,4 +131,3 @@ parser.add_argument('--fsl.test.fixed_silence_unknown', action='store_true',
                     help='force unknown and silence class to be present in every episode (default: False)')
 parser.add_argument('--fsl.test.batch_size', type=int, default=128, 
                     help='test few shot batch size  (default: 128)')
-parser.add_argument('--fsl.test.note', type=str, default='GSC')
