@@ -148,7 +148,6 @@ if __name__ == '__main__':
     for ep, support_sample in enumerate(train_episodic_loader):
         support_samples = support_sample['data']
         class_list = support_sample['label'][0]
-        print(support_samples.device); exit()
         classifier.fit_batch_offline(support_samples, class_list)
         unk_idx = classifier.word_to_index.get('_unknown_', None)
 
