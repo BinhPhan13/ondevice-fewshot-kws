@@ -12,8 +12,12 @@ default_datadir = None
 default_split = 'GSC12'
 
 # GPU args
+parser.add_argument('--data.nworkers', type=int, default=8, metavar="NWORKERS",
+                    help="number of workers for dataloader")
+parser.add_argument('--data.cuda', action='store_true', help="run in CUDA mode (default: False)")
 parser.add_argument('--cuda_idx', type=str, default='0', metavar='IDX',
                     help="cuda index to use (default 0)")
+
 # model args
 parser.add_argument('--model.model_name', type=str, default=default_model_name, metavar='MODELNAME',
                     help="model name (default: {:s})".format(default_model_name))
@@ -77,7 +81,6 @@ parser.add_argument('--log.fields', type=str, default=default_fields, metavar='F
 default_exp_dir = 'results'
 parser.add_argument('--log.exp_dir', type=str, default=default_exp_dir, metavar='EXP_DIR',
                     help="directory where experiments should be saved (default: {:s})".format(default_exp_dir))
-parser.add_argument('--data.cuda', action='store_true', help="run in CUDA mode (default: False)")
 
 
 # speech data args
