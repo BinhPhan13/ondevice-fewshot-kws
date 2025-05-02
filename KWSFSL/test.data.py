@@ -58,20 +58,28 @@ if __name__ == '__main__':
     dataset = MSWCDataset(speech_args)
     test_args = filter_opt(opt, 'fsl.test')
 
+    npos = test_args['n_pos']
+    nneg = test_args['n_neg']
+    nshot = test_args['n_support']
+
     get_dataloaders = partial(
         dataset.get_dataloaders,
-        npos=test_args['n_pos'],
-        nneg=test_args['n_neg'],
-        nshot=test_args['n_support'],
+        npos=npos,
+        nneg=nneg,
+        nshot=nshot,
         batch_size=test_args['batch_size'],
         nworkers=opt['data.nworkers'],
     )
 
-    log_dir = Path(opt['log.exp_dir'])
-    if not log_dir.is_dir():
-        log_dir.mkdir(parents=True)
+    n_episodes = test_args['n_episodes']
+    note = opt['log.note']
+    log_dir = model_path.parent / (
+        f"eval_fsl.{note}.{classifier_name}."
+        f"{npos}pos.{nneg}neg.{nshot}shot.{n_episodes}eps"
+    )
+    log_dir.mkdir(parents=True, exist_ok=True)
 
-    for ep in range(test_args['n_episodes']):
+    for ep in range(n_episodes):
         dl_train, dl_test = get_dataloaders()
 
         support_sample = next(iter(dl_train))
