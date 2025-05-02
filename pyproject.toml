@@ -3,7 +3,14 @@ name = "ondevice-fewshot-kws"
 authors = [
     { name = "Binh Phan", email = "binhpt@meeyland.com" }
 ]
-dependencies = [
+dependencies = []
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = [
     "numpy==1.22.4",
     "tqdm==4.67.1",
     "torch==1.13.0+cu117",
@@ -15,11 +22,4 @@ dependencies = [
     "pandas==1.4.3",
     "scikit-learn==0.24.2",
 ]
-readme = "README.md"
-requires-python = ">= 3.8"
-
-[tool.rye]
-managed = true
-virtual = true
-dev-dependencies = []
 
