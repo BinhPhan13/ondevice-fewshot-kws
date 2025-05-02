@@ -8,6 +8,10 @@ from models.utils import register_model
 from models.encoder.DSCNN import DSCNNL, DSCNNM, DSCNNS, DSCNNL_NONORM, DSCNNL_LAYERNORM, DSCNNS_NONORM, DSCNNS_LAYERNORM
 from models.encoder.resnet import Res15, Res8
 from models.encoder.TCResNet import TCResNet8, TCResNet8Dilated
+from models.encoder.BCResNet import BCResNets
+
+# ConvNext
+from models.encoder.ConvNeXtV2 import convnextv2_small, convnextv2_ronto, convnextv2_yokto, convnextv2_zepto, convnextv2_zepto_1, convnextv2_atto_0, convnextv2_atto, convnextv2_femto, convnextv2_pico, convnextv2_tiny, convnextv2_base, convnextv2_large, convnextv2_nano, convnextv2_atto_0_5, convnextv2_virus, convnextv2_virus0, convnextv2_atto_tung
 
 from models.preprocessing import MFCC
 
@@ -107,23 +111,55 @@ def get_encoder(encoding, x_dim, hid_dim, out_dim):
     elif encoding == 'DSCNNS_NONORM':
         return DSCNNS_NONORM(x_dim)
     elif encoding == 'DSCNNS_LAYERNORM':
-        return DSCNNS_LAYERNORM(x_dim)    
+        return DSCNNS_LAYERNORM(x_dim)  
+
+    # ConvNext
+    elif encoding == 'ConvNeXtV2_Virus':
+        return convnextv2_virus(in_chans=x_dim[0], num_classes=276)
+    elif encoding == 'ConvNeXtV2_Virus0':
+        return convnextv2_virus0(in_chans=x_dim[0], num_classes=276)
+    elif encoding == 'ConvNeXtV2_Atto_Tung':
+        return convnextv2_atto_tung(in_chans=x_dim[0], num_classes=64)
+    elif encoding == 'ConvNeXtV2_Atto_0':
+        return convnextv2_atto_0(in_chans=x_dim[0], num_classes=49)
+    elif encoding == 'ConvNeXtV2_Atto_0_5':
+        return convnextv2_atto_0_5(in_chans=x_dim[0], num_classes=276)
+    elif encoding == 'ConvNeXtV2_Atto':
+        return convnextv2_atto(in_chans=x_dim[0], num_classes=hid_dim)
+    elif encoding == 'ConvNeXtV2_Femto':
+        return convnextv2_femto(in_chans=x_dim[0], num_classes=hid_dim)
+    elif encoding == 'ConvNeXtV2_Pico':
+        return convnextv2_pico(in_chans=x_dim[0], num_classes=hid_dim)
+    elif encoding == 'ConvNeXtV2_Nano':
+        return convnextv2_nano(in_chans=x_dim[0], num_classes=hid_dim)
+    elif encoding == 'ConvNeXtV2_Tiny':
+        return convnextv2_tiny(in_chans=x_dim[0], num_classes=hid_dim)
+    elif encoding == 'ConvNeXtV2_Zepto':
+        return convnextv2_zepto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Zepto_1':
+        return convnextv2_zepto_1(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Yokto':
+        return convnextv2_yokto(in_chans=x_dim[0], num_classes=x_dim[1])
+    elif encoding == 'ConvNeXtV2_Ronto':
+        return convnextv2_ronto(in_chans=x_dim[0], num_classes=hid_dim)
     
     # experiments for PEELER
     elif encoding == 'DSCNNS_PEELER':
         return DSCNNS_PEELER(x_dim)
     elif encoding == 'DSCNNL_PEELER':
         return DSCNNL_PEELER(x_dim)    
-    
 
+    # ResNet
     elif encoding == 'Resnet15':
-        return Res15(hid_dim)
+        return Res15(1, 64)
     elif encoding == 'Resnet8':
         return Res8(hid_dim)
     elif encoding == 'TCResNet8':
         return TCResNet8(x_dim[0], x_dim[1], x_dim[2])
     elif encoding == 'TCResNet8Dilated':
         return TCResNet8Dilated(x_dim[0], x_dim[1], x_dim[2])
+    elif encoding == 'BCResNet':
+        return BCResNets(x_dim)
     else:
         raise ValueError("Model {} is not valid".format(encoding))
 
