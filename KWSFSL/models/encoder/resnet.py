@@ -27,10 +27,10 @@ class CustomSwish(nn.Module):
 
 class Res15(nn.Module):
 
-    def __init__(self, n_maps):
+    def __init__(self, in_chans, n_maps):
         super().__init__()
         n_maps = n_maps
-        self.conv0 = nn.Conv2d(1, n_maps, (3, 3), padding=(1, 1), bias=False)
+        self.conv0 = nn.Conv2d(in_chans, n_maps, (3, 3), padding=(1, 1), bias=False)
         self.n_layers = n_layers = 13
         dilation = True
         if dilation:
