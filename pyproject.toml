@@ -1,0 +1,25 @@
+[project]
+name = "ondevice-fewshot-kws"
+authors = [
+    { name = "Binh Phan", email = "binhpt@meeyland.com" }
+]
+dependencies = [
+    "numpy==1.22.4",
+    "tqdm==4.67.1",
+    "torch==1.13.0+cu117",
+    "torchvision==0.14.0",
+    "torchaudio==0.13.0",
+    "torchnet==0.0.4",
+    "scipy==1.6.3",
+    "networkx==2.6.3",
+    "pandas==1.4.3",
+    "scikit-learn==0.24.2",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[tool.rye]
+managed = true
+virtual = true
+dev-dependencies = []
+
