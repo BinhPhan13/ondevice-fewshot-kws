@@ -1,5 +1,5 @@
 #!/bin/bash
-[ -z $1 ] && { echo "usage: mswc-sgo file args"; exit 1; }
+[ -z $1 ] && { echo "usage: ${0##*/} file args"; exit 1; }
 file=$1; shift
 mswc-sample $@ -go | tqdm > $file
 

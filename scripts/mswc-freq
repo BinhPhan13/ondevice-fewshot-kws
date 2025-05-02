@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-[ -z $1 ] && { echo "usage: mswc-freq DATASET_HOME"; exit 1; }
+[ -z $1 ] && { echo "usage: ${0##*/} DATASET_HOME"; exit 1; }
 cd $1 &> /dev/null || { echo "failed cd to $1"; exit 1; }
 
 langs=$(ls splits) || exit 1
