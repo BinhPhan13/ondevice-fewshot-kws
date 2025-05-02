@@ -1,0 +1,26 @@
+#!/usr/bin/bash
+[ -z $1 ] && { echo "usage: mswc-freq DATASET_HOME"; exit 1; }
+cd $1 &> /dev/null || { echo "failed cd to $1"; exit 1; }
+
+langs=$(ls splits) || exit 1
+splits="train dev test"
+
+handle_lang() {
+  lang=$1
+  outdir="frequency/$lang"
+  mkdir -p $outdir
+
+  for split in $splits; do
+    file="splits/$lang/$lang\_$split.csv"
+    idx=$([ $split = splits ] && echo 3 || echo 2)
+
+    awk -F, -v i=$idx 'NR > 1 {print $i}' $file | uniq -c | sort -rh |
+    awk '{printf "%-15s%s\n", $1, $2}' > $outdir/$split.freq &
+  done && wait
+  echo "finish language $lang"
+}
+
+for lang in $langs; do
+  handle_lang $lang &
+done && wait
+
