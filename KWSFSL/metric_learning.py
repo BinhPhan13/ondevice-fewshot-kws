@@ -21,17 +21,13 @@ from models.utils import get_model
 import log as log_utils
 
 
-# needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
-
-
 if __name__ == '__main__':
-    
-    # read and post-process options
     from parser_kws import *
     args = parser.parse_args()
-
     opt = vars(parser.parse_args())
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['data.cuda_devices']
+
     opt['model.x_dim'] = list(map(int, opt['model.x_dim'].split(',')))
     opt['log.fields'] = ['loss']
     speech_args = filter_opt(opt, 'speech')

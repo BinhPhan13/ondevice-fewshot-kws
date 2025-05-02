@@ -10,6 +10,13 @@ default_model_prep = 'mfcc'
 default_dataset = 'googlespeechcommand'
 default_datadir = '' # FIXME: add here your path
 default_split = 'GSC12'
+
+
+# cuda args
+parser.add_argument('--data.cuda', action='store_true', help="run in CUDA mode (default: False)")
+parser.add_argument('--data.cuda_devices', type=str, default='0', help="CUDA visible devices (default: '0')")
+
+
 # model args
 parser.add_argument('--model.model_name', type=str, default=default_model_name, metavar='MODELNAME',
                     help="model name (default: {:s})".format(default_model_name))
@@ -73,7 +80,6 @@ parser.add_argument('--log.fields', type=str, default=default_fields, metavar='F
 default_exp_dir = 'results'
 parser.add_argument('--log.exp_dir', type=str, default=default_exp_dir, metavar='EXP_DIR',
                     help="directory where experiments should be saved (default: {:s})".format(default_exp_dir))
-parser.add_argument('--data.cuda', action='store_true', help="run in CUDA mode (default: False)")
 
 
 # speech data args

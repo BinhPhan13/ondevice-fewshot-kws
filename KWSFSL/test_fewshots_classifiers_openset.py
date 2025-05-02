@@ -6,9 +6,6 @@ from tqdm import tqdm
 import time 
 import numpy as np
 
-# needed by the computing infrastructure, you can remove it!
-os.environ['CUDA_VISIBLE_DEVICES'] = os.environ.get('_CONDOR_AssignedGPUs', 'CUDA0').replace('CUDA', '')
-
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -86,6 +83,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     opt = vars(parser.parse_args())
 
+    os.environ['CUDA_VISIBLE_DEVICES'] = opt['data.cuda_devices']
 
     # load the encoder
     if os.path.isfile(opt['model.model_path']):    
