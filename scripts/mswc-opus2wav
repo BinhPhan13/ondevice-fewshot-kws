@@ -1,0 +1,22 @@
+#!/bin/bash
+[[ -z $1 || -z $2 ]] && { echo "usage: ${0##*/} DATASET_HOME LANGUAGE"; exit 1; }
+cd $1 &> /dev/null || { echo "failed cd to $1"; exit 1; }
+
+lang=$2
+[ -d audio/$lang ] || { echo "language $lang not exist!"; exit 1; }
+audio_dir=audio/$lang/clips
+
+split_file="splits/$lang/$lang\_splits.csv"
+links=($(awk -F, 'NR > 1 {print $2}' $split_file))
+
+num_links=${#links[@]}
+batch=64
+
+for i in ${!links[@]}; do
+    echo $i
+    link=$audio_dir/${links[i]}
+    ffmpeg -y -loglevel 24 -i $link -c:a pcm_s16le ${link%.opus}.wav &
+
+    [[ $(( ($i+1) % $batch )) -eq 0 || $(( $i+1 )) -eq $num_links ]] && wait
+done | tqdm --total $num_links > /dev/null
+
