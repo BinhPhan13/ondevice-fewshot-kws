@@ -89,11 +89,11 @@ parser.add_argument('--speech.dataset', type=str, default=default_dataset, metav
                     help="data set name (default: {:s})".format(default_dataset))
 parser.add_argument('--speech.task', type=str, default=default_task, metavar='SP',
                     help="split name (default: {:s})".format(default_task))
-parser.add_argument('--speech.data_dir', type=str, default=default_datadir, metavar='DIR',
+parser.add_argument('--speech.datadir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the dataset")
 parser.add_argument('--speech.csv_file', type=str, default=default_datadir, metavar='FILE',
                     help="path to csv file")
-parser.add_argument('--speech.csv_dir', type=str, default=default_datadir, metavar='DIR',
+parser.add_argument('--speech.csvdir', type=str, default=default_datadir, metavar='DIR',
                     help="path to csv split files")
 parser.add_argument('--speech.use_wav', action='store_true', help="use wav in MSWC")
 

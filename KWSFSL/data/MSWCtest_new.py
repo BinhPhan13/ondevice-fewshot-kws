@@ -42,7 +42,7 @@ class MSWCDataset:
         self.desired_samples = int(self.sample_rate * self.clip_duration_ms / 1000)
 
         # main data dir
-        self.data_dir = args['data_dir']
+        self.data_dir = args['datadir']
         self.csv_file = args['csv_file']
         self.noise_dir = args['noise_dir']
 
