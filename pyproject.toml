@@ -3,7 +3,9 @@ name = "ondevice-fewshot-kws"
 authors = [
     { name = "Binh Phan", email = "binhpt@meeyland.com" }
 ]
-dependencies = []
+dependencies = [
+    "loguru>=0.7.3",
+]
 readme = "README.md"
 requires-python = ">= 3.8"
 
@@ -21,5 +23,6 @@ dev-dependencies = [
     "networkx==2.6.3",
     "pandas==1.4.3",
     "scikit-learn==0.24.2",
+    "timm==1.0.15",
 ]
 

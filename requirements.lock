@@ -9,3 +9,4 @@
 #   generate-hashes: false
 #   universal: false
 
+loguru==0.7.3

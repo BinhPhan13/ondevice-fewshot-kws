@@ -13,6 +13,12 @@ certifi==2025.4.26
     # via requests
 charset-normalizer==3.4.1
     # via requests
+filelock==3.16.1
+    # via huggingface-hub
+fsspec==2025.3.0
+    # via huggingface-hub
+huggingface-hub==0.30.2
+    # via timm
 idna==3.10
     # via requests
 joblib==1.4.2
@@ -21,6 +27,7 @@ jsonpatch==1.33
     # via visdom
 jsonpointer==3.0.0
     # via jsonpatch
+loguru==0.7.3
 networkx==2.6.3
     # via visdom
 numpy==1.22.4
@@ -29,6 +36,8 @@ numpy==1.22.4
     # via scipy
     # via torchvision
     # via visdom
+packaging==25.0
+    # via huggingface-hub
 pandas==1.4.3
 pillow==10.4.0
     # via torchvision
@@ -37,9 +46,15 @@ python-dateutil==2.9.0.post0
     # via pandas
 pytz==2025.2
     # via pandas
+pyyaml==6.0.2
+    # via huggingface-hub
+    # via timm
 requests==2.32.3
+    # via huggingface-hub
     # via torchvision
     # via visdom
+safetensors==0.5.3
+    # via timm
 scikit-learn==0.24.2
 scipy==1.6.3
     # via scikit-learn
@@ -50,17 +65,22 @@ six==1.17.0
     # via visdom
 threadpoolctl==3.5.0
     # via scikit-learn
+timm==1.0.15
 torch==1.13.0+cu117
+    # via timm
     # via torchaudio
     # via torchnet
     # via torchvision
 torchaudio==0.13.0
 torchnet==0.0.4
 torchvision==0.14.0
+    # via timm
 tornado==6.4.2
     # via visdom
 tqdm==4.67.1
+    # via huggingface-hub
 typing-extensions==4.3.0
+    # via huggingface-hub
     # via torch
     # via torchvision
 urllib3==2.2.3
