@@ -56,6 +56,7 @@ class MSWCDataset:
         # main data dir
         self.data_dir = data_dir
         self.splits_dir = args["splits_dir"]
+        self.noise_dir = args["noise_dir"]
         self.use_wav = args["use_wav"]
 
         # add noise
@@ -327,15 +328,19 @@ class MSWCDataset:
 
         return d
 
+
     def load_background_data(self):
-        background_path = os.path.join(self.data_dir, '../noise/', '*.wav')
+        background_path = os.path.join(self.noise_dir, '*.wav')
+        if not (wav_paths := glob.glob(background_path)):
+            raise FileNotFoundError(f"No noise file found at {self.noise_dir}")
+
         background_data = []
-        if self.use_background:
-            for wav_path in glob.glob(background_path):
-                bg_sound, bg_sr = torchaudio.load(wav_path)
-                background_data.append(bg_sound.flatten())
+        for wav_path in wav_paths:
+            bg_sound, bg_sr = torchaudio.load(wav_path)
+            background_data.append(bg_sound.flatten())
         return background_data
-    
+
+
     def build_mfcc_extractor(self):
         # moved to the model
 
