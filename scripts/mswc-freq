@@ -14,7 +14,8 @@ handle_lang() {
     file="splits/$lang/$lang\_$split.csv"
     idx=$([ $split = splits ] && echo 3 || echo 2)
 
-    awk -F, -v i=$idx 'NR > 1 {print $i}' $file | uniq -c | sort -rh |
+    awk -F, -v i=$idx 'NR > 1 {print $i}' $file | sort |
+    uniq -c | sort -rh |
     awk '{printf "%-15s%s\n", $1, $2}' > $outdir/$split.freq &
   done && wait
   echo "finish language $lang"
