@@ -56,6 +56,7 @@ class MSWCDataset:
         # main data dir
         self.data_dir = data_dir
         self.splits_dir = args["splits_dir"]
+        self.use_wav = args["use_wav"]
 
         # add noise
         self.use_background = args['include_noise']
@@ -177,7 +178,8 @@ class MSWCDataset:
             samples_per_words = {}
             for i,word in enumerate(word_list):
                 if word in wanted_words:
-                    wav_path = file_list[i].replace(".opus",".wav")
+                    wav_path = file_list[i]
+                    if self.use_wav: wav_path = wav_path.replace('.opus', '.wav')
                     speaker_id = spk_list[i]
                     if balance:
                         if word in samples_per_words.keys():
