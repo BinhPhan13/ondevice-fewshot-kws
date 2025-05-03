@@ -55,6 +55,7 @@ class MSWCDataset:
 
         # main data dir
         self.data_dir = data_dir
+        self.splits_dir = args["splits_dir"]
 
         # add noise
         self.use_background = args['include_noise']
@@ -117,16 +118,13 @@ class MSWCDataset:
         self.data_set = {'training': [], 'validation': [], 'testing': []}
         wanted_words = []        
 
-        for split in ["training","validation", "testing"]:
-            
-            # parse the right file
-            if split == 'training':
-                split_name = 'train'
-            elif split == 'validation':
-                split_name = 'dev'
-            elif split == 'testing':
-                split_name = 'test'
-            df = pd.read_csv(self.data_dir+"en_"+split_name+".csv")
+        for split, split_name in zip(
+            ['training', 'validation', 'testing'],
+            ['train', 'dev', 'test'],
+        ):
+            split_file = os.path.join(self.splits_dir, f'en_{split_name}.csv')
+            df = pd.read_csv(split_file)
+
             parse_word = {}
             # compute the number of samples per class
             for word in df['WORD']:
@@ -393,7 +391,7 @@ class MSWCDataset:
     
     def load_audio(self, key_path, key_label, out_field, d):
         #format d struct: {'label': 'stop', 'file': '../../data/speech_commands/GSC/stop/879a2b38_nohash_3.wav', 'speaker': '879a2b38'}
-        filepath = self.data_dir + 'clips_wav/'+ d[key_path]
+        filepath = os.path.join(self.data_dir, 'clips', d[key_path])
         sound, sr = torchaudio.load(filepath=filepath, normalize=True)
         if sr != self.sample_rate:
             sound = torchaudio.functional.resample(sound, sr, self.sample_rate)

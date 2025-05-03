@@ -89,6 +89,8 @@ parser.add_argument('--speech.task', type=str, default=default_split, metavar='S
                     help="split name (default: {:s})".format(default_split))
 parser.add_argument('--speech.default_datadir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the dataset")
+parser.add_argument('--speech.splits_dir', type=str, default=default_datadir, metavar='DIR',
+                    help="path to the splits csv files")
 parser.add_argument('--speech.include_silence', action='store_true', help="one of the classes out of n should be silence (default: False)")
 parser.add_argument('--speech.include_unknown', action='store_true', help="one of the classes out of n should be unknown (default: False)")
 parser.add_argument('--speech.sample_rate', type=int, default=16000, help='desired sampling rate of the input')
