@@ -35,6 +35,9 @@ parser.add_argument('-r', action='store_true',
 parser.add_argument('-seed', default=None, type=int, metavar='SEED',
         help="seed to shuffle the histogram")
 
+parser.add_argument('-mode', default='lang', type=str,
+        choices=['lang', 'word', 'word_only'],
+        help="select the mode to preview: 0")
 parser.add_argument('-go', action='store_true',
         help="execute the preview, USE mswc-sgo instead!")
 parser.add_argument('-goseed', default=0, type=int, metavar='SEED',
@@ -95,7 +98,6 @@ if include_words:
 if exclude_words:
     H = [word for word in H if str(word) not in exclude_words]
 
-
 if args.seed is not None:
     random.seed(args.seed)
     random.shuffle(H)
@@ -110,7 +112,8 @@ if num_words:
 lang_words = defaultdict(list)
 for word in H: lang_words[word.lang].append(word)
 
-if not args.go: # PREVIEW
+#--------------------PREVIEW--------------------#
+def view_langs():
     lang_stat = {}
     total_words = total_files = 0
     for lang, words in lang_words.items():
@@ -135,10 +138,24 @@ if not args.go: # PREVIEW
         num_words = lang_stat[lang]["num_words"]
         num_files = lang_stat[lang]["num_files"]
         print(f"{lang:<15}{num_words:<10}{num_files}")
+
+
+def view_words(with_freq: bool = True):
+    for word in H:
+        msg = str(word)
+        if with_freq: msg = f"{msg:<15}{word.freq}"
+        print(msg)
+
+
+if not args.go:
+    if args.mode == 'lang': view_langs()
+    elif args.mode == 'word': view_words()
+    elif args.mode == 'word_only': view_words(False)
+    else: raise ValueError(f"Not supported mode: {args.mode}")
+
     exit(0)
 
-
-# EXECUTE
+#--------------------EXECUTE--------------------#
 @dataclass
 class Extractor:
     split: str
