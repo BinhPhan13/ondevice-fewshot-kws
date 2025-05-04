@@ -1,0 +1,17 @@
+MSWC
+├── audio
+│  ├── ...
+│  ├── en
+│  │  └── clips
+│  └── ...
+├── noise
+│  └── *.wav
+└── splits
+   ├── ...
+   ├── en
+   │  ├── en_splits.csv
+   │  ├── en_train.csv
+   │  ├── en_dev.csv
+   │  └── en_dev.csv
+   └── ...
+
