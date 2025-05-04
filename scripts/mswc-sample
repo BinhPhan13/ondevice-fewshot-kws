@@ -18,6 +18,11 @@ parser.add_argument('-il', metavar='LANG', nargs='+', default=[],
 parser.add_argument('-xl', metavar='LANG', nargs='+', default=[],
         dest='exclude', help="languages to exclude")
 
+parser.add_argument('-iw', metavar='WORD', nargs='+', default=[],
+        help="words to include")
+parser.add_argument('-xw', metavar='WORD', nargs='+', default=[],
+        help="words to exclude")
+
 parser.add_argument('-b', metavar='N', default=0, type=int,
         dest='baseline', help="num files lower bound")
 parser.add_argument('-t', metavar='N', default=-1, type=int,
@@ -82,6 +87,15 @@ if not langs:
 langs = sorted(langs - set(args.exclude))
 
 H = list(heapq.merge(*[refine(lang) for lang in langs], reverse=True))
+
+include_words = set(args.iw)
+exclude_words = set(args.xw)
+if include_words:
+    H = [word for word in H if str(word) in include_words]
+if exclude_words:
+    H = [word for word in H if str(word) not in exclude_words]
+
+
 if args.seed is not None:
     random.seed(args.seed)
     random.shuffle(H)
