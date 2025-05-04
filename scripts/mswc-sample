@@ -49,7 +49,7 @@ class Word:
     freq: int
 
     def __str__(self):
-        return f"{self.lang.replace('-', '_')}_{self.value}"
+        return f"{self.lang}:{self.value}"
 
     def __eq__(self, other):
         return self.freq == other.freq
