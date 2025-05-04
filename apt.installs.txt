@@ -1,0 +1,4 @@
+ffmpeg
+htop
+bash-completion
+

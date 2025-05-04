@@ -1,5 +1,12 @@
+libmr==0.1.9
 fsspec==2025.3.0
 huggingface-hub==0.30.2
 safetensors==0.5.3
 timm==1.0.15
+jsonpatch==1.33
+jsonpointer==3.0.0
+torchnet==0.0.4
+tornado==6.4.2
+visdom==0.2.4
+websocket-client==1.8.0
 
