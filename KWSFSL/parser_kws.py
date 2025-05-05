@@ -15,6 +15,7 @@ default_split = 'GSC12'
 # cuda args
 parser.add_argument('--data.cuda', action='store_true', help="run in CUDA mode (default: False)")
 parser.add_argument('--data.cuda_devices', type=str, default='0', help="CUDA visible devices (default: '0')")
+parser.add_argument('--data.nworkers', type=int, default=0, help="number of workers for dataloader (default: 0)")
 
 
 # model args

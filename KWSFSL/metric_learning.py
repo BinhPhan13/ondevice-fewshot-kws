@@ -183,6 +183,7 @@ if __name__ == '__main__':
         # get episode loaders
         episodic_loader = ds_tr.get_episodic_dataloader(
             n_way_tr, n_support + n_query, n_episodes - start_episode,
+            n_workers=args.nworkers,
             pin_memory=bool(cuda),
         )
 
