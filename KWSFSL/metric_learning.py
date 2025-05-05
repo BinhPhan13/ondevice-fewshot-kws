@@ -173,6 +173,7 @@ if __name__ == '__main__':
             n_support, n_episodes, max_epoch, train_task, dataset))
     
     cuda = opt['data.cuda']
+    n_workers = opt['data.n_workers']
     train_patience = opt['train.patience']
     stop = False
     epoch = start_epoch
@@ -183,7 +184,7 @@ if __name__ == '__main__':
         # get episode loaders
         episodic_loader = ds_tr.get_episodic_dataloader(
             n_way_tr, n_support + n_query, n_episodes - start_episode,
-            n_workers=args.nworkers,
+            n_workers=n_workers,
             pin_memory=bool(cuda),
         )
 
