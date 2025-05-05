@@ -12,8 +12,8 @@ class MSWCDataset(AudioDataset):
     DatasetType = Dict[str, List[Json]]
 
     def __init__(self, args):
-        super().__init__(args)
         self.csv_file = args['csv_file']
+        super().__init__(args)
 
 
     def generate_data_dictionary(self):
