@@ -46,12 +46,11 @@ class AudioDataset:
         self.generate_data_dictionary()
 
         self.transforms = compose([
-                partial(self._load_audio, 'file', 'label', 'data'),
-                partial(self._adjust_volumn, 'data'),
-                partial(self._shift_and_pad, 'data'),
-                partial(self._mix_noise, 'data'),
-                partial(self._label2idx, 'label', 'label_idx')
-
+            partial(self._load_audio, 'file', 'label', 'data'),
+            partial(self._adjust_volumn, 'data'),
+            partial(self._shift_and_pad, 'data'),
+            partial(self._mix_noise, 'data'),
+            partial(self._label2idx, 'label', 'label_idx')
         ])
 
 
