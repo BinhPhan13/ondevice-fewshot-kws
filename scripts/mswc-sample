@@ -38,6 +38,9 @@ parser.add_argument('-seed', default=None, type=int, metavar='SEED',
 parser.add_argument('-mode', default='lang', type=str,
         choices=['lang', 'word', 'word_only'],
         help="select the mode to preview: 0")
+parser.add_argument('-sep', default='_', type=str,
+        help="separator between language and word")
+
 parser.add_argument('-go', action='store_true',
         help="execute the preview, USE mswc-sgo instead!")
 parser.add_argument('-goseed', default=0, type=int, metavar='SEED',
@@ -52,7 +55,7 @@ class Word:
     freq: int
 
     def __str__(self):
-        return f"{self.lang}:{self.value}"
+        return f"{self.lang}{args.sep}{self.value}"
 
     def __eq__(self, other):
         return self.freq == other.freq
