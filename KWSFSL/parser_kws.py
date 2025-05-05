@@ -91,6 +91,8 @@ parser.add_argument('--speech.default_datadir', type=str, default=default_datadi
                     help="path to the dataset")
 parser.add_argument('--speech.splits_dir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the splits csv files")
+parser.add_argument('--speech.csv_file', type=str, default=None, metavar='FILE',
+                    help="path to the data csv file")
 parser.add_argument('--speech.noise_dir', type=str, default=default_datadir, metavar='DIR',
                     help="path to the noise wav files")
 parser.add_argument('--speech.use_wav', action='store_true', help="use wav instead of opus format (default: False)")

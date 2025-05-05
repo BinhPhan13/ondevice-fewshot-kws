@@ -10,7 +10,6 @@ import glob
 import time
 
 import pandas as pd
-import soundfile as sf
 from datetime import datetime
 
 import numpy as np
@@ -23,7 +22,7 @@ import torchaudio
 import torch.nn.functional as F
 
 
-from .data_utils import SetDataset
+from .utils import LoaderDataset
 
 class EpisodicFixedBatchSampler(object):
     def __init__(self, n_classes, n_way, n_episodes, fixed_silence_unknown = False):
@@ -253,7 +252,7 @@ class MSWCDataset:
                         shuffle=True, num_workers=0)
                 dl_list.append(dl)
 
-            ds = SetDataset(dl_list)
+            ds = LoaderDataset(dl_list)
             data_loader_params = dict(batch_sampler = sampler, num_workers=8, 
                     pin_memory=not self.cuda)  
             dl = torch.utils.data.DataLoader(ds, **data_loader_params)

@@ -20,7 +20,7 @@ from torchnet.dataset import ListDataset, TransformDataset
 import torchaudio
 import torch.nn.functional as F
 
-from .data_utils import SetDataset
+from .utils import LoaderDataset
 
 
 
@@ -208,7 +208,7 @@ class GSCSpeechDataset:
                         shuffle=True, num_workers=0)
                 dl_list.append(dl)
 
-            ds = SetDataset(dl_list)
+            ds = LoaderDataset(dl_list)
 
             data_loader_params = dict(batch_sampler = sampler,  num_workers =8, 
                     pin_memory=not self.cuda)   

@@ -99,16 +99,17 @@ if __name__ == '__main__':
     
     #prepare datasets (supported:  'googlespeechcommand' , 'MSWC')
     if dataset == 'googlespeechcommand':
+        raise ValueError("Dataset not recognized")
         from data.GSCSpeechData import GSCSpeechDataset
         ds_tr = GSCSpeechDataset(data_dir, train_task, opt['data.cuda'], speech_args)
     elif dataset == 'MSWC':
-        from data.MSWCData import MSWCDataset
-        ds_tr = MSWCDataset(data_dir, train_task, False, speech_args)
+        from data.mswc import MSWCDataset
+        ds_tr = MSWCDataset(speech_args)
     else:
         raise ValueError("Dataset not recognized")
 
     #number of classes of the training task
-    num_classes_tr = ds_tr.num_classes()
+    num_classes_tr = len(ds_tr.all_words)
     print("The training task {} of the {} Dataset has {} classes".format(dataset, train_task, num_classes_tr))
     n_way_tr = min(max(n_way, 0), num_classes_tr) # clamp n_way based on availbale classes
 
@@ -179,9 +180,11 @@ if __name__ == '__main__':
     model.train()
 
     while epoch < max_epoch and not stop:
-        # get episode loaders 
-        episodic_loader = ds_tr.get_episodic_dataloader('training', n_way_tr, 
-            n_support+n_query, n_episodes-start_episode)
+        # get episode loaders
+        episodic_loader = ds_tr.get_episodic_dataloader(
+            n_way_tr, n_support + n_query, n_episodes - start_episode,
+            pin_memory=bool(cuda),
+        )
 
         for split, split_meters in meters.items():
             for field, meter in split_meters.items():
