@@ -11,7 +11,7 @@ from torchnet.transform import compose
 
 from .utils import (
     Json,
-    JsonStr,
+    JsonInt,
     adjust_volume,
     load_audio,
     mix_noise,
@@ -56,7 +56,7 @@ class AudioDataset:
 
     def generate_data_dictionary(self):
         self.dataset: Json = {}
-        self.word2idx: JsonStr = {}
+        self.word2idx: JsonInt = {}
 
 
     def get_transform_dataset(self, data_list: List[Json]):

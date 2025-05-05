@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, Dataset, Sampler
 
 Json = Dict[str, Any]
 JsonStr = Dict[str, str]
+JsonInt = Dict[str, int]
 
 def npow2(x: int):
     if x < 1: return 1

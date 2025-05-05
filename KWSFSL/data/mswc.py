@@ -27,7 +27,7 @@ class MSWCDataset(AudioDataset):
 
         self.dataset: MSWCDataset.DatasetType = dict(self.dataset)
         self.all_words = list(self.dataset.keys())
-        self.word_to_index = {
+        self.word2idx = {
             word: idx for idx, word in enumerate(self.all_words, 1)
         }
 
