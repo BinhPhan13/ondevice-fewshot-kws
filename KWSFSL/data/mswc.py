@@ -9,7 +9,6 @@ from .utils import EpisodicBatchSampler, Json, LoaderDataset
 
 class MSWCDataset(AudioDataset):
     NOISE_POW_SCALED = True
-    DatasetType = Dict[str, List[Json]]
 
     def __init__(self, args):
         self.csv_file = args['csv_file']
@@ -25,11 +24,10 @@ class MSWCDataset(AudioDataset):
                 if self.use_wav: link = link.replace('.opus', '.wav')
                 self.dataset[word].append({'label': word, 'file': link})
 
-        self.dataset: MSWCDataset.DatasetType = dict(self.dataset)
+        self.dataset: Dict[str, List[Json]] = dict(self.dataset)
         self.all_words = list(self.dataset.keys())
-        self.word2idx = {
-            word: idx for idx, word in enumerate(self.all_words, 1)
-        }
+        self.word2idx = {word: idx+1 for idx, word in enumerate(self.all_words)}
+
 
     def get_episodic_dataloader(
         self,
@@ -45,7 +43,7 @@ class MSWCDataset(AudioDataset):
             if len(data_list) < n_shot:
                 raise ValueError(
                     f"The word {word} has {len(data_list)} samples in total, "
-                    f"which < {n_shot = }"
+                    f"which smaller than {n_shot = }"
                 )
 
             ts_ds = self.get_transform_dataset(data_list)
