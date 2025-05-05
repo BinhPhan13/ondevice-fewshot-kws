@@ -1,9 +1,12 @@
 import random
-from typing import Any, Dict, List
+from functools import wraps
+from time import time
+from typing import Any, Callable, Dict, List, TypeVar
 
 import torch
 import torch.nn.functional as F
 import torchaudio
+from loguru import logger
 from torch.utils.data import DataLoader, Dataset, Sampler
 
 
@@ -15,6 +18,20 @@ def npow2(x: int):
     if x < 1: return 1
     is_pow2 = (x & (x-1)) == 0
     return x if is_pow2 else 1 << x.bit_length()
+
+
+T = TypeVar('T')
+def timeit(f0: Callable[..., T]):
+    @wraps(f0)
+    def f1(*args, **kwargs) -> T:
+        start = time()
+        ret = f0(*args, **kwargs)
+        duration = time() - start
+
+        logger.debug(f"{f0.__qualname__} takes {duration:.3f}s")
+        return ret
+
+    return f1
 
 
 class LoaderDataset(Dataset):
