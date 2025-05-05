@@ -1,10 +1,19 @@
 import random
-from typing import List
+from typing import Any, Dict, List
 
 import torch
 import torch.nn.functional as F
 import torchaudio
 from torch.utils.data import DataLoader, Dataset, Sampler
+
+
+Json = Dict[str, Any]
+JsonStr = Dict[str, str]
+
+def npow2(x: int):
+    if x < 1: return 1
+    is_pow2 = (x & (x-1)) == 0
+    return x if is_pow2 else 1 << x.bit_length()
 
 
 class LoaderDataset(Dataset):

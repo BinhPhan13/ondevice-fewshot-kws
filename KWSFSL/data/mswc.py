@@ -3,9 +3,8 @@ from typing import Dict, List
 
 from torch.utils.data import DataLoader
 
-from ..utils import Json
 from .base import AudioDataset
-from .utils import EpisodicBatchSampler, LoaderDataset
+from .utils import EpisodicBatchSampler, Json, LoaderDataset
 
 
 class MSWCDataset(AudioDataset):

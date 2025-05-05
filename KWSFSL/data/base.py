@@ -9,8 +9,14 @@ import torchaudio
 from torchnet.dataset import ListDataset, TransformDataset
 from torchnet.transform import compose
 
-from ..utils import Json, JsonStr
-from .utils import adjust_volume, load_audio, mix_noise, shift_and_pad
+from .utils import (
+    Json,
+    JsonStr,
+    adjust_volume,
+    load_audio,
+    mix_noise,
+    shift_and_pad,
+)
 
 
 class AudioDataset:
