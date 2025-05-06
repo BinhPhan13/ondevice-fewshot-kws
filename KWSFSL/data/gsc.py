@@ -54,6 +54,7 @@ class GSCDataset(AudioDataset):
         self.testing_pct = 10.0
 
         super().__init__(args)
+        self.num_frames = self.desired_samples
 
 
     def get_iid_dataloader(
