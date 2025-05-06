@@ -2,6 +2,7 @@ cmd=(
 python KWSFSL/test_fewshots_classifiers_openset.py
 --data.cuda
 --data.cuda_devices 0
+--data.n_workers 4
 
 --speech.dataset googlespeechcommand
 --speech.task GSC12,GSC22

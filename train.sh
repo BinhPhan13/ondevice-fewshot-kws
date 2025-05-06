@@ -2,11 +2,12 @@ cmd=(
 python KWSFSL/metric_learning.py
 --data.cuda
 --data.cuda_devices 0
+--data.n_workers 16
 
 --speech.dataset MSWC
 --speech.task MSWC500U
---speech.default_datadir ~/MSWC/audio/en
---speech.splits_dir ~/MSWC/splits/en
+--speech.default_datadir ~/MSWC/audio
+--speech.csv_file ~/mswc-subsets/en500.orig.csv
 
 --speech.use_wav
 --speech.include_noise
