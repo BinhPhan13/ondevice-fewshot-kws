@@ -211,7 +211,7 @@ class GSCDataset(AudioDataset):
 
         # Add silence and unknown words to each set
         for set_idx in dataset:
-            set_size = len(dataset[set_idx])
+            set_size = sum(len(data) for data in dataset[set_idx].values())
             if self.silence:
                 silence_data = {
                     'label': self.SILENCE_LABEL,
