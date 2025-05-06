@@ -25,6 +25,7 @@ class AudioDataset:
     NOISE_POW_SCALED = False
 
     def __init__(self, args):
+        self.num_frames = args['num_frames']
         self.sample_rate = args['sample_rate']
         self.desired_samples = self.sample_rate * args['clip_duration'] // 1000
         self.fg_volume = args['foreground_volume']
@@ -85,7 +86,7 @@ class AudioDataset:
 
     def _load_audio(self, file_key: str, label_key: str, out_key: str, d: Json):
         filepath = join_path(self.data_dir, str(d[file_key]))
-        audio = load_audio(filepath, self.sample_rate, self.desired_samples)
+        audio = load_audio(filepath, self.sample_rate, self.num_frames)
         if d[label_key] == self.SILENCE_LABEL:
             audio.zero_()
         d[out_key] = audio
