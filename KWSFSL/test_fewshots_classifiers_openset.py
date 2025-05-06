@@ -180,8 +180,9 @@ if __name__ == '__main__':
         '''
         # compute prototypes
         support_samples = support_sample['data']
+        class_list = support_samples['label'][0]
         # fit the classifier on the support samples
-        classifier.fit_batch_offline(support_samples, class_list_tr)
+        classifier.fit_batch_offline(support_samples, class_list)
         # get the index of the unknown class of the classifier
         unk_idx = classifier.word_to_index.get('_unknown_')
 
@@ -190,7 +191,7 @@ if __name__ == '__main__':
             NB: _unknown_ is the negative class as part of the class_list
         '''  
         # test on positive dataset     
-        print('\n Test Episode {} with classes: {}'.format(ep, class_list_tr))
+        print('\n Test Episode {} with classes: {}'.format(ep, class_list))
 
         # load only samples from the target classes and not negative _unknown_
         class_list_pos = ds.get_class_list(False, False)
