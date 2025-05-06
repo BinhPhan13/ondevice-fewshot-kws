@@ -1,10 +1,10 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import List
 
 from torch.utils.data import DataLoader
 
 from .base import AudioDataset
-from .utils import EpisodicBatchSampler, Json, LoaderDataset
+from .utils import EpisodicBatchSampler, LoaderDataset, Word2Data
 
 
 class MSWCDataset(AudioDataset):
@@ -24,9 +24,8 @@ class MSWCDataset(AudioDataset):
                 if self.use_wav: link = link.replace('.opus', '.wav')
                 self.dataset[word].append({'label': word, 'file': link})
 
-        self.dataset: Dict[str, List[Json]] = dict(self.dataset)
-        self.all_words = list(self.dataset.keys())
-        self.word2idx = {word: idx+1 for idx, word in enumerate(self.all_words)}
+        self.dataset: Word2Data = dict(self.dataset)
+        self.word2idx = {word: idx+1 for idx, word in enumerate(self.dataset)}
 
 
     def get_episodic_dataloader(
@@ -38,7 +37,7 @@ class MSWCDataset(AudioDataset):
         pin_memory: bool = False,
     ):
         dl_list: List[DataLoader] = []
-        for word in self.all_words:
+        for word in self.dataset:
             data_list = self.dataset[word]
             if len(data_list) < n_shot:
                 raise ValueError(
@@ -56,7 +55,7 @@ class MSWCDataset(AudioDataset):
             dl_list.append(dl)
 
         ds = LoaderDataset(dl_list)
-        sampler = EpisodicBatchSampler(len(self.all_words), n_way, n_eps)
+        sampler = EpisodicBatchSampler(self.num_classes, n_way, n_eps)
         dl = DataLoader(
             ds,
             batch_sampler=sampler,

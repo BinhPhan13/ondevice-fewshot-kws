@@ -57,6 +57,10 @@ class AudioDataset:
         ])
 
 
+    @property
+    def num_classes(self):
+        return len(self.word2idx)
+
     def generate_data_dictionary(self):
         self.dataset: Json = {}
         self.word2idx: JsonInt = {}

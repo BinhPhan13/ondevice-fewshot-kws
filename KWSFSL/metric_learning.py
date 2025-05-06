@@ -109,7 +109,7 @@ if __name__ == '__main__':
         raise ValueError("Dataset not recognized")
 
     #number of classes of the training task
-    num_classes_tr = len(ds_tr.all_words)
+    num_classes_tr = ds_tr.num_classes
     print("The training task {} of the {} Dataset has {} classes".format(dataset, train_task, num_classes_tr))
     n_way_tr = min(max(n_way, 0), num_classes_tr) # clamp n_way based on availbale classes
 
