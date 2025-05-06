@@ -112,31 +112,24 @@ if __name__ == '__main__':
     speech_args = filter_opt(opt, 'speech')
     dataset = opt['speech.dataset']
     data_dir = opt['speech.default_datadir'] 
-    task = opt['speech.task'] 
-    tasks = task.split(",")
-    if len(tasks) == 2:
-        pos_task, neg_task = tasks
-    elif len(tasks) == 1:
-        pos_task = tasks[0]
-        neg_task = None
+
+    task = str(opt['speech.task'] )
+    pos_task, neg_task, *_ = task.split(',')
 
     if dataset == 'googlespeechcommand':
-        from data.GSCSpeechData import GSCSpeechDataset
-        ds = GSCSpeechDataset(data_dir, pos_task, opt['data.cuda'], speech_args)
-        num_classes = ds.num_classes()
+        from data.gsc import GSCDataset
+        ds = GSCDataset(speech_args, pos_task)
+        num_classes = ds.num_classes
         opt['model.num_classes'] = num_classes
         print("The task {} of the {} Dataset has {} classes".format(
                 pos_task, dataset, num_classes))
-        
-        ds_neg = None
-        if neg_task is not None:
-            ds_neg = GSCSpeechDataset(data_dir, neg_task, 
-                    opt['data.cuda'], speech_args)
-            print("The task {} is used for negative samples".format(
-                    neg_task))       
+
+        ds_neg = GSCDataset(speech_args, neg_task)
+        print("The task {} is used for negative samples".format(
+                neg_task))
+
     else:
         raise ValueError("Dataset not recognized")
-        
 
 
     # Few-Shot Parameters to configure the classifier for testing
@@ -145,14 +138,26 @@ if __name__ == '__main__':
     n_way = opt['fsl.test.n_way']
     n_support = opt['fsl.test.n_support']
     n_episodes = opt['fsl.test.n_episodes']
-    fixed_silence_unknown = opt['fsl.test.fixed_silence_unknown']
-    
+
     # setup dataloader of support samples
     # support samples are retrived from the training split of the dataset
     # if include_unknown is True, the _unknown_ class is one of the num_classes
-    sampler = ds.get_episodic_fixed_sampler(num_classes,  n_way, n_episodes, 
-        fixed_silence_unknown = fixed_silence_unknown, include_unknown = speech_args['include_unknown'])
-    train_episodic_loader = ds.get_episodic_dataloader('training', n_way, n_support, n_episodes, sampler=sampler)
+    class_list_tr = ds.get_class_list()
+    class_list_pos = ds.get_class_list(False, False)
+    class_list_neg = ds_neg.get_class_list(True, True)
+
+    loader_opts = {
+        'pin_memory': opt['data.cuda'],
+        'n_workers': opt['data.n_workers'],
+    }
+    train_episodic_loader = ds.get_episodic_dataloader(
+        'training',
+        class_list_tr,
+        n_way,
+        n_support,
+        n_episodes,
+        **loader_opts,
+    )
     
 
     # Postprocess arguments
@@ -175,33 +180,34 @@ if __name__ == '__main__':
         '''
         # compute prototypes
         support_samples = support_sample['data']
-        # extract label list          
-        class_list = support_sample['label'][0]
-        print(class_list)
         # fit the classifier on the support samples
-        classifier.fit_batch_offline(support_samples, class_list)
-        #get the index of the unknown class of the classifier
-        unk_idx = classifier.word_to_index['_unknown_'] if '_unknown_' in classifier.word_to_index.keys() \
-                                                        else None
+        classifier.fit_batch_offline(support_samples, class_list_tr)
+        # get the index of the unknown class of the classifier
+        unk_idx = classifier.word_to_index.get('_unknown_')
 
         '''
             Few-shot test in open set
             NB: _unknown_ is the negative class as part of the class_list
         '''  
         # test on positive dataset     
-        print('\n Test Episode {} with classes: {}'.format(ep, class_list))
+        print('\n Test Episode {} with classes: {}'.format(ep, class_list_tr))
 
         # load only samples from the target classes and not negative _unknown_
-        query_loader = ds.get_iid_dataloader('testing', opt['fsl.test.batch_size'], 
-            class_list = [x for x in class_list if 'unknown' not in x])
-        y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos = test_model(query_loader, classifier, unk_idx)
+        class_list_pos = ds.get_class_list(False, False)
+        pos_loader = ds.get_iid_dataloader(
+            'testing',
+            class_list=class_list_pos,
+            batch_size=opt['fsl.test.batch_size'],
+        )
+        y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos = test_model(pos_loader, classifier, unk_idx)
 
-        # test on the negative dataset (_unknown_) if present    
-        if ds_neg is not None:
-            neg_loader = ds_neg.get_iid_dataloader('testing', opt['fsl.test.batch_size'])
-            y_score_neg, y_pred_neg, y_true_neg, y_pred_close_neg, y_pred_ood_neg = test_model(neg_loader, classifier, unk_idx, force_unk_testdata=True)
-        else:
-            y_score_neg, y_pred_neg, y_true_neg, y_pred_close_neg, y_pred_ood_neg = None, None, None, None, None
+        # test on the negative dataset (_unknown_)
+        neg_loader = ds_neg.get_iid_dataloader(
+            'testing',
+            class_list=class_list_neg,
+            batch_size=opt['fsl.test.batch_size'],
+        )
+        y_score_neg, y_pred_neg, y_true_neg, y_pred_close_neg, y_pred_ood_neg = test_model(neg_loader, classifier, unk_idx, force_unk_testdata=True)
 
         # store and print metrics
         output_ep = compute_metrics(y_score_pos, y_pred_pos, y_true_pos, y_pred_close_pos, y_pred_ood_pos,

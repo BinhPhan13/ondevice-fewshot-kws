@@ -62,7 +62,7 @@ class AudioDataset:
         return len(self.word2idx)
 
     def generate_data_dictionary(self):
-        self.dataset: Json = {}
+        self.dataset = {}
         self.word2idx: JsonInt = {}
 
 

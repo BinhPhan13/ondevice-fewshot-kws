@@ -36,9 +36,10 @@ class MSWCDataset(AudioDataset):
         n_workers: int = 8,
         pin_memory: bool = False,
     ):
+        dataset = self.dataset
         dl_list: List[DataLoader] = []
-        for word in self.dataset:
-            data_list = self.dataset[word]
+        for word in dataset:
+            data_list = dataset[word]
             if len(data_list) < n_shot:
                 raise ValueError(
                     f"The word {word} has {len(data_list)} samples in total, "
