@@ -250,5 +250,5 @@ class GSCDataset(AudioDataset):
     def get_audio_paths(self):
         index_file = '.audio.index.txt'
         with open(join_path(self.data_dir, index_file)) as f:
-            for line in f: yield join_path(self.data_dir, line)
+            for line in f: yield join_path(self.data_dir, line.strip())
 
