@@ -198,11 +198,11 @@ class GSCDataset(AudioDataset):
             # If we use 35 classes - all are known, hence no unknown samples
             data = {'file': wav_path, 'speaker': hashname}
             if word in wanted_words:
-                dataset[set_idx].get(word, []).append({'label': word, **data})
+                data['label'] = word
+                dataset[set_idx].setdefault(word, []).append(data)
             elif word in unknown_words:
-                unknown[set_idx].get(self.UNKNOWN_LABEL, []).append(
-                    {'label': self.UNKNOWN_LABEL, **data}
-                )
+                data['label'] = self.UNKNOWN_LABEL
+                unknown[set_idx].setdefault(self.UNKNOWN_LABEL, []).append(data)
 
         if not all_words: raise ValueError("No words found")
         if not_found_words := wanted_words - all_words:
