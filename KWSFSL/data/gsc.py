@@ -156,6 +156,7 @@ class GSCDataset(AudioDataset):
 
         self.wanted_words = wanted_words
         self.unknown_words = unknown_words
+        self.unknown = bool(unknown_words)
 
 
     def generate_data_dictionary(self):
