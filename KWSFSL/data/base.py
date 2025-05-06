@@ -6,6 +6,7 @@ from typing import List
 
 import torch
 import torchaudio
+from loguru import logger
 from torchnet.dataset import ListDataset, TransformDataset
 from torchnet.transform import compose
 
@@ -39,11 +40,12 @@ class AudioDataset:
         self.noise_volume = args['noise_snr']
         self.noise_freq = args["noise_frequency"]
         if self.use_noise:
-            print("Load background data")
+            logger.debug("Load noise data")
             self.noise_data = self.load_noise_data()
         else:
             self.noise_data = []
 
+        logger.debug("Generate data dictionary")
         self.generate_data_dictionary()
 
         self.transforms = compose([
