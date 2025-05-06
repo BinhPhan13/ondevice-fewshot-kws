@@ -180,7 +180,7 @@ if __name__ == '__main__':
         '''
         # compute prototypes
         support_samples = support_sample['data']
-        class_list = support_samples['label'][0]
+        class_list = support_sample['label'][0]
         # fit the classifier on the support samples
         classifier.fit_batch_offline(support_samples, class_list)
         # get the index of the unknown class of the classifier
