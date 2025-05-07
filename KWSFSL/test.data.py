@@ -61,12 +61,14 @@ if __name__ == '__main__':
     npos = test_args['n_pos']
     nneg = test_args['n_neg']
     nshot = test_args['n_support']
+    threshold = test_args['threshold']
 
     get_dataloaders = partial(
         dataset.get_dataloaders,
         npos=npos,
         nneg=nneg,
         nshot=nshot,
+        threshold=threshold,
         batch_size=test_args['batch_size'],
         nworkers=opt['data.nworkers'],
     )
@@ -92,3 +94,4 @@ if __name__ == '__main__':
         results = test_model(classifier, dl_test)
 
         torch.save(results.cpu(), log_dir/f'ep{ep}.pt')
+

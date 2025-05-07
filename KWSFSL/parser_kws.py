@@ -129,6 +129,8 @@ parser.add_argument('--fsl.test.n_pos', type=int, default=1,
                     help='test few shot learning: number of positive words')
 parser.add_argument('--fsl.test.n_neg', type=int, default=10, 
                     help='test few shot learning: number of negative words')
+parser.add_argument('--fsl.test.threshold', type=int, default=100,
+                    help='test few shot learning: number of audio files per word upper bound')
 parser.add_argument('--fsl.test.n_support', type=int, default=5, 
                     help='test few shot learning: number of support samples (default: 5)')
 parser.add_argument('--fsl.test.n_episodes', type=int, default=100, 

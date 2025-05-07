@@ -81,39 +81,44 @@ class MSWCDataset:
                 self.data_set[word].append({'label': word, 'file': link})
 
         self.data_set = dict(self.data_set)
-        self.all_words = list(self.data_set.keys())
-        self.word_to_index = {word: idx for idx, word in enumerate(self.all_words, 1)}
+        self.word_to_index = {word: idx for idx, word in enumerate(self.data_set, 1)}
 
-        
+
     def get_transform_dataset(self, file_dict, classes: List[str]):
         # classes is a list of classes
         file_dict = sum([file_dict[c] for c in classes], [])
         ls_ds = ListDataset(file_dict)
         ts_ds = TransformDataset(ls_ds, self.transforms)
-        
+
         return ts_ds
 
     def get_dataloaders(self,
         npos: int, nneg: int, nshot: int,
+        threshold: int,
         batch_size: int = 16,
         nworkers: int = 4,
     ):
-        wanted_words = random.sample(self.all_words, npos + nneg)
+        # make sure all random has the same seed
+        random_state = random.getstate()
+
+        random.setstate(random_state)
+        wanted_words = random.sample(list(self.word_to_index), npos + nneg)
         pos_words = wanted_words[:npos]
         neg_words = wanted_words[npos:]
-        
+
         ds_train: Dict[str, List[str]] = {}
         ds_test: Dict[str, List[str]] = {}
-        
+
         for word in pos_words:
-            files = self.data_set[word]
-            random.shuffle(files)
-            
+            random.setstate(random_state)
+            files = random.sample(self.data_set[word], threshold)
+
             ds_train[word] = files[:nshot]
             ds_test[word] = files[nshot:]
 
         for word in neg_words:
-            files = self.data_set[word]
+            random.setstate(random_state)
+            files = random.sample(self.data_set[word], threshold)
             ds_test[word] = files
 
         dl_list = [
@@ -128,14 +133,14 @@ class MSWCDataset:
             batch_size=npos, num_workers=nworkers,
             pin_memory=self.cuda,
         )
-        
+
         dl_test = DataLoader(
             self.get_transform_dataset(ds_test, wanted_words),
             batch_size=batch_size, num_workers=nworkers,
             pin_memory=self.cuda,
             shuffle=True,
         )
-        
+
         return dl_train, dl_test
 
 
