@@ -73,7 +73,7 @@ if __name__ == '__main__':
         nshot=nshot,
         threshold=threshold,
         batch_size=test_args['batch_size'],
-        nworkers=opt['data.nworkers'],
+        nworkers=opt['data.n_workers'],
     )
 
     n_episodes = test_args['n_episodes']
