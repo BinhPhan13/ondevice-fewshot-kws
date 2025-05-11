@@ -103,6 +103,7 @@ class NearestClassMean(nn.Module):
 
         # class list and define class2idb
         self.class_list = class_list
+        self.word_to_index = {}
         for i,item in enumerate(class_list):
             self.word_to_index[item] = i
 
@@ -120,18 +121,18 @@ class NearestClassMean(nn.Module):
     def class2torchidx(self, labels):
         label_list = []
         for item in labels:
-            label_index = self.word_to_index[item]
-            label_list.append([label_index])
+            label_index = self.word_to_index.get(item, -1)
+            label_list.append(label_index)
         return torch.LongTensor(label_list)
 
     @torch.no_grad()
     def evaluate_batch(self, test_x, labels, return_probas=False):
         if isinstance(labels[0], str):
             target_inds = self.class2torchidx(labels)
+        else: target_inds = labels
 
         if self.cuda:
             test_x = test_x.cuda()
-            target_inds = target_inds.cuda()
 
         if self.backbone is not None:
             zq = self.backbone.get_embeddings(test_x)
@@ -139,7 +140,4 @@ class NearestClassMean(nn.Module):
             zq = test_x
 
         scores = self.predict(zq, return_probas=return_probas)
-        #print(scores, target_inds)
-        p_y = F.softmax(scores, dim=1).cpu()
-
-        return p_y, target_inds
+        return scores, target_inds
