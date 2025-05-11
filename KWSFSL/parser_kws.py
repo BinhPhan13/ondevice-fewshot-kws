@@ -75,6 +75,7 @@ parser.add_argument('--train.margin', type=float, default=0.5,
 
 
 # log args
+parser.add_argument('--log.note', type=str, default='gsc')
 default_fields = 'loss,acc'
 parser.add_argument('--log.fields', type=str, default=default_fields, metavar='FIELDS',
                     help="fields to monitor during training (default: {:s})".format(default_fields))
@@ -126,9 +127,16 @@ parser.add_argument('--fsl.test.n_way', type=int, default=12,
                     help='test few shot learning: number of subclasses (default: 12)')
 parser.add_argument('--fsl.test.n_support', type=int, default=5, 
                     help='test few shot learning: number of support samples (default: 5)')
-parser.add_argument('--fsl.test.n_episodes', type=int, default=100, 
+parser.add_argument('--fsl.test.n_pos', type=int, default=5,
+                    help='test few shot learning: number of positive words')
+parser.add_argument('--fsl.test.n_neg', type=int, default=50,
+                    help='test few shot learning: number of negative words')
+parser.add_argument('--fsl.test.threshold', type=int, default=100,
+                    help='test few shot learning: number of audio files per word upper bound')
+parser.add_argument('--fsl.test.n_episodes', type=int, default=100,
                     help='test few shot learning: number of episodes  (default: 100)')
 parser.add_argument('--fsl.test.fixed_silence_unknown', action='store_true',
                     help='force unknown and silence class to be present in every episode (default: False)')
 parser.add_argument('--fsl.test.batch_size', type=int, default=128, 
                     help='test few shot batch size  (default: 128)')
+

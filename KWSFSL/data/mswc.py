@@ -1,3 +1,4 @@
+import random
 from collections import defaultdict
 from typing import List
 
@@ -64,4 +65,65 @@ class MSWCDataset(AudioDataset):
             pin_memory=pin_memory,
         )
         return dl
+
+
+    def get_eval_dataloaders(
+        self,
+        npos: int,
+        nneg: int,
+        nshot: int,
+        threshold: int,
+        batch_size: int = 256,
+        nworkers: int = 8,
+        pin_memory: bool = False,
+    ):
+        # make sure all random has the same seed
+        random_state = random.getstate()
+
+        random.setstate(random_state)
+        wanted_words = random.sample(list(self.word2idx), npos + nneg)
+        pos_words = wanted_words[:npos]
+        neg_words = wanted_words[npos:]
+
+        dataset = self.dataset
+        ds_train: Word2Data = {}
+        ds_test: Word2Data = {}
+
+        for word in pos_words:
+            random.setstate(random_state)
+            files = random.sample(dataset[word], threshold)
+
+            ds_train[word] = files[:nshot]
+            ds_test[word] = files[nshot:]
+
+        for word in neg_words:
+            random.setstate(random_state)
+            files = random.sample(dataset[word], threshold)
+            ds_test[word] = files
+
+        dl_list = [
+            DataLoader(
+                self.get_transform_dataset(ds_train[word]),  # type:ignore
+                batch_size=nshot,
+                num_workers=0,
+            )
+            for word in pos_words
+        ]
+        dl_train = DataLoader(
+            LoaderDataset(dl_list),
+            batch_size=npos,
+            num_workers=nworkers,
+            pin_memory=pin_memory,
+        )
+
+        data_list = sum([ds_test[word] for word in neg_words], [])
+        dl_test = DataLoader(
+            self.get_transform_dataset(data_list),  # type:ignore
+            batch_size=batch_size,
+            num_workers=nworkers,
+            pin_memory=pin_memory,
+            shuffle=True,
+        )
+
+        return dl_train, dl_test
 
