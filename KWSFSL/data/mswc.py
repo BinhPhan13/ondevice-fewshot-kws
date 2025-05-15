@@ -116,7 +116,7 @@ class MSWCDataset(AudioDataset):
             pin_memory=pin_memory,
         )
 
-        data_list = sum([ds_test[word] for word in neg_words], [])
+        data_list = sum([ds_test[word] for word in wanted_words], [])
         dl_test = DataLoader(
             self.get_transform_dataset(data_list),  # type:ignore
             batch_size=batch_size,

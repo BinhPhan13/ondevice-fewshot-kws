@@ -55,6 +55,7 @@ if __name__ == '__main__':
     classifier = getattr(classifiers, _name_mapping[classifier_name])(
         backbone=enc_model, cuda=opt['data.cuda']
     )
+    logger.debug(classifier)
 
     from data.mswc import MSWCDataset
     speech_args = filter_opt(opt, 'speech')
